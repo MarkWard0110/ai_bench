@@ -132,3 +132,24 @@ function durationToMilliseconds(duration) {
 }
 
 
+document.getElementById('modelFilterInput').addEventListener('input', function() {
+    filterTableByModel(this.value.toLowerCase());
+});
+
+function filterTableByModel(filterValue) {
+    const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+    const rows = tableBody.rows;
+
+    // Loop through all table rows, and hide those that don't match the search query
+    for (let i = 0; i < rows.length; i++) {
+        let modelCell = rows[i].getElementsByTagName("td")[0]; // Assuming the Model is the first column
+        if (modelCell) {
+            let modelText = modelCell.textContent || modelCell.innerText;
+            if (modelText.toLowerCase().indexOf(filterValue) > -1) {
+                rows[i].style.display = ""; // The row matches the filter; show it
+            } else {
+                rows[i].style.display = "none"; // The row does not match the filter; hide it
+            }
+        }
+    }
+}

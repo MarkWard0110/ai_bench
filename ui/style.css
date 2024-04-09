@@ -25,4 +25,13 @@ body {
   #data-table td {
     vertical-align: top;
   }
+  #filter-container {
+    margin-bottom: 20px;
+  }
+  
+  #modelFilterInput {
+    padding: 8px;
+    margin-left: 8px;
+    width: 200px;
+  }
   
