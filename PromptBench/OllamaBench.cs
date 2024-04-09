@@ -19,54 +19,63 @@ public class OllamaBenchmark
         return models.Select(m => m.Name).ToArray();
     }
     public async Task<Dictionary<string, Dictionary<string, TimeSpan>>> RunAsync(IEnumerable<string> models, List<string> prompts)
+{
+    var results = new Dictionary<string, Dictionary<string, TimeSpan>>();
+    var modelCount = models.Count();
+    var promptCount = prompts.Count;
+    var total = modelCount * promptCount;
+    int modelIndex = 0;
+    foreach (var model in models)
     {
-        var results = new Dictionary<string, Dictionary<string, TimeSpan>>();
-
-        foreach (var model in models)
+        modelIndex++;
+        results[model] = new Dictionary<string, TimeSpan>();
+        int promptIndex = 0;
+        foreach (var prompt in prompts)
         {
-            results[model] = new Dictionary<string, TimeSpan>();
+            promptIndex++;
 
-            foreach (var prompt in prompts)
+            // Calculate and output the total percentage of completion
+            int completed = ((modelIndex - 1) * promptCount) + promptIndex;
+            double percentage = (double)completed / total * 100;
+
+            Console.WriteLine($"Running {percentage}%: model {modelIndex} of {modelCount}: {DateTime.Now} {model}, prompt {promptIndex} of {promptCount}: {prompt}");
+            var stopwatch = Stopwatch.StartNew();
+            var modelRequest = new GenerateCompletionRequest
             {
-                Console.WriteLine($"Running model: {DateTime.Now} {model}, prompt: {prompt}");
-                var stopwatch = Stopwatch.StartNew();
-                var modelRequest = new GenerateCompletionRequest
-                {
-                    Model = model,
-                    Prompt = prompt,
-                    // Options = new RequestOptions
-                    // {
-                    //     Temperature = 0.0f,
-                    // }
-                };
-
-                var timeout = TimeSpan.FromMinutes(5);
-
-                using var cts = new CancellationTokenSource(timeout);
-
-                ConversationContextWithResponse? modelResponse = null;
-                try {
-                    modelResponse = await _ollama.GetCompletion(modelRequest, cts.Token);
+                Model = model,
+                Prompt = prompt,
+                Options = new RequestOptions{
+                    Temperature = 0.1f
                 }
-                catch (TaskCanceledException)
-                {
-                    modelResponse = new ConversationContextWithResponse(string.Empty, [], null);
-                }
-                if (cts.Token.IsCancellationRequested)
-                {
-                    Console.WriteLine($"Model {model} timed out for prompt {prompt}");
-                }
+            };
 
-                stopwatch.Stop();
-                var elapsed = !cts.Token.IsCancellationRequested ? stopwatch.Elapsed : TimeSpan.MinValue;
-                results[model][prompt] = elapsed;
-                var tokensPerSecond = modelResponse.Metadata != null ? modelResponse.Metadata.EvalCount / (modelResponse.Metadata.EvalDuration / 1e9) : -1;
-                SaveRecord(model, prompt, elapsed, modelResponse.Response, tokensPerSecond);
+            var timeout = TimeSpan.FromMinutes(5);
+
+            using var cts = new CancellationTokenSource(timeout);
+
+            ConversationContextWithResponse? modelResponse = null;
+            try {
+                modelResponse = await _ollama.GetCompletion(modelRequest, cts.Token);
             }
-        }
+            catch (TaskCanceledException)
+            {
+                modelResponse = new ConversationContextWithResponse(string.Empty, [], null);
+            }
+            if (cts.Token.IsCancellationRequested)
+            {
+                Console.WriteLine($"Model {model} timed out for prompt {prompt}");
+            }
 
-        return results;
+            stopwatch.Stop();
+            var elapsed = !cts.Token.IsCancellationRequested ? stopwatch.Elapsed : TimeSpan.MinValue;
+            results[model][prompt] = elapsed;
+            var tokensPerSecond = modelResponse.Metadata != null ? modelResponse.Metadata.EvalCount / (modelResponse.Metadata.EvalDuration / 1e9) : -1;
+            SaveRecord(model, prompt, elapsed, modelResponse.Response, tokensPerSecond);
+            
+        }
     }
+    return results;
+}
 
     private void SaveRecord(string model, string prompt, TimeSpan duration, string response, double tokensPerSecond)
     {
