@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Prompt Benchmark Reviewer</title>
+<link rel="stylesheet" href="style.css"> <!-- Link to your CSS file -->
+<script defer src="script.js"></script> <!-- Link to your JavaScript file -->
+</head>
+<body>
+<div id="file-uploader">
+  <input type="file" id="csvFileInput" accept=".csv" multiple>
+  <button id="uploadBtn">Load CSV File(s)</button>
+</div>
+<div id="data-table">
+  <table>
+    <thead>
+      <tr>
+        <th>Model</th>
+        <th>Duration</th>
+        <th>TokensPerSecond</th>
+        <th>Prompt</th>
+        <th>Response</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Records will be inserted here -->
+    </tbody>
+  </table>
+</div>
+</body>
+</html>

@@ -1,0 +1,17 @@
+body {
+    font-family: Arial, sans-serif;
+  }
+  
+  #data-table table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  #data-table th, #data-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+  
+  #data-table tr:nth-child(even) {background-color: #f2f2f2;}
+  
