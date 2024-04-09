@@ -22,3 +22,7 @@ body {
     content: " \2193"; /* Unicode for downward arrow */
   }
   
+  #data-table td {
+    vertical-align: top;
+  }
+  

@@ -15,22 +15,29 @@ function loadCSVFiles() {
 }
 
 function parseCSV(text) {
-    const rows = text.split('\n');
+    const lines = text.split('\n');
     const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
 
-    rows.slice(1).forEach((row) => {
-        if (row) {
-            const cells = parseCSVRow(row);
+    lines.slice(1).forEach(line => {
+        if (line) {
+            const row = tableBody.insertRow();
+            const cells = parseCSVRow(line);
 
-            const tableRow = tableBody.insertRow();
             cells.forEach((cell, index) => {
-                const cellElement = tableRow.insertCell();
-                // Replace \n with HTML line breaks for display. Adjust index based on your CSV structure.
-                cellElement.innerHTML = index >= 3 ? cell.replace(/\\n/g, '<br>') : cell;
+                const cellElement = row.insertCell();
+                if (index === 3 || index === 4) { // Assuming Prompt and Response are the 4th and 5th columns
+                    // Use the <pre> tag to preserve formatting
+                    const preFormattedText = document.createElement('pre');
+                    preFormattedText.textContent = cell.replace(/\\n/g, '\n');
+                    cellElement.appendChild(preFormattedText);
+                } else {
+                    cellElement.textContent = cell; // Use textContent for other cells to prevent HTML injection
+                }
             });
         }
     });
 }
+
 
 function parseCSVRow(row) {
     const cells = [];
@@ -83,13 +90,20 @@ function sortColumn(columnId) {
 
     // Sort rows based on the content of the clicked column
     rowsArray.sort((rowA, rowB) => {
-        const cellA = rowA.cells[columnIndex].innerText.toLowerCase();
-        const cellB = rowB.cells[columnIndex].innerText.toLowerCase();
+        let cellA = rowA.cells[columnIndex].innerText.toLowerCase();
+        let cellB = rowB.cells[columnIndex].innerText.toLowerCase();
 
-        // Adjust for numeric sorting if necessary
-        if (columnId === 'duration' || columnId === 'tokensPerSecond') {
-            return isAscending ? parseFloat(cellA) - parseFloat(cellB) : parseFloat(cellB) - parseFloat(cellA);
+        // Convert to appropriate format for comparison based on column
+        if (columnId === 'duration') {
+            cellA = durationToMilliseconds(cellA);
+            cellB = durationToMilliseconds(cellB);
+            return isAscending ? cellA - cellB : cellB - cellA;
+        } else if (columnId === 'tokensPerSecond') {
+            cellA = parseFloat(cellA);
+            cellB = parseFloat(cellB);
+            return isAscending ? cellA - cellB : cellB - cellA;
         } else {
+            // Use localeCompare for string comparison
             return isAscending ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
         }
     });
@@ -97,14 +111,24 @@ function sortColumn(columnId) {
     // Reattach rows to the table body in their new order
     rowsArray.forEach(row => tableBody.appendChild(row));
 
-    // Update sort indicators (arrows or similar) on headers
+    // Update sort indicators on headers
     document.querySelectorAll('#data-table th').forEach(th => {
         if (th.id === columnId) {
             th.classList.remove('asc', 'desc');
             th.classList.add(sortDirections[columnId]);
         } else {
-            th.classList.remove('asc', 'desc'); // Remove sort indicators from other headers
+            th.classList.remove('asc', 'desc');
         }
     });
 }
+
+
+function durationToMilliseconds(duration) {
+    const parts = duration.split(":");
+    const hours = parseInt(parts[0], 10);
+    const minutes = parseInt(parts[1], 10);
+    const seconds = parseFloat(parts[2]);
+    return (hours * 3600 + minutes * 60 + seconds) * 1000;
+}
+
 
