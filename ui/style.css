@@ -14,4 +14,11 @@ body {
   }
   
   #data-table tr:nth-child(even) {background-color: #f2f2f2;}
+  #data-table th.asc::after {
+    content: " \2191"; /* Unicode for upward arrow */
+  }
+  
+  #data-table th.desc::after {
+    content: " \2193"; /* Unicode for downward arrow */
+  }
   
