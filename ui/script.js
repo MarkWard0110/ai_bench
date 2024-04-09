@@ -25,18 +25,21 @@ function parseCSV(text) {
 
             cells.forEach((cell, index) => {
                 const cellElement = row.insertCell();
-                if (index === 3 || index === 4) { // Assuming Prompt and Response are the 4th and 5th columns
-                    // Use the <pre> tag to preserve formatting
-                    const preFormattedText = document.createElement('pre');
-                    preFormattedText.textContent = cell.replace(/\\n/g, '\n');
-                    cellElement.appendChild(preFormattedText);
+                if (index === 0) { // Assuming the Model column is the first column
+                    cellElement.classList.add('no-wrap'); // Add class to prevent text wrapping
+                }
+                if (index === 3 || index === 4) { // Handle special formatting for Prompt and Response
+                    const preElement = document.createElement('pre');
+                    preElement.textContent = cell.replace(/\\n/g, '\n');
+                    cellElement.appendChild(preElement);
                 } else {
-                    cellElement.textContent = cell; // Use textContent for other cells to prevent HTML injection
+                    cellElement.textContent = cell;
                 }
             });
         }
     });
 }
+
 
 
 function parseCSVRow(row) {
