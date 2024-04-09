@@ -1,0 +1,23 @@
+AUTO
+NORMAL
+
+
+Running model: 4/4/2024 7:20:08 PM phi:2.7b-chat-v2-q3_K_S, prompt: As an event planning assistant, your task is to organize a detailed schedule for a three-day corporate retreat. You must: 
+Exception has occurred: CLR/System.NullReferenceException
+An exception of type 'System.NullReferenceException' occurred in System.Private.CoreLib.dll but was not handled in user code: 'Object reference not set to an instance of an object.'
+   at OllamaBenchmark.<RunAsync>d__3.MoveNext() in C:\Users\wardm\source\research\.NET\ai_bench\PromptBench\OllamaBench.cs:line 42
+   at Program.<<Main>$>d__0.MoveNext() in C:\Users\wardm\source\research\.NET\ai_bench\PromptBench\Program.cs:line 48
+
+
+   Running model: 4/4/2024 7:44:23 PM phi:2.7b-chat-v2-q5_0, prompt: Design a database schema for an online shopping system.
+   Exception has occurred: CLR/System.NullReferenceException
+An exception of type 'System.NullReferenceException' occurred in System.Private.CoreLib.dll but was not handled in user code: 'Object reference not set to an instance of an object.'
+   at OllamaBenchmark.<RunAsync>d__3.MoveNext() in C:\Users\wardm\source\research\.NET\ai_bench\PromptBench\OllamaBench.cs:line 42
+   at Program.<<Main>$>d__0.MoveNext() in C:\Users\wardm\source\research\.NET\ai_bench\PromptBench\Program.cs:line 48
+
+
+   Running model: 4/4/2024 8:00:45 PM codellama:7b-instruct, prompt: Generate a summary of the book 'To Kill a Mockingbird' by Harper Lee.
+   Exception ...
+
+   Running model: 4/4/2024 8:04:52 PM gemma:2b-instruct, prompt: Design a database schema for an online shopping system.
+   Exception ...

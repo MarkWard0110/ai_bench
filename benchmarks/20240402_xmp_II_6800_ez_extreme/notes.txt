@@ -1,0 +1,41 @@
+XMP II: 6800 MHz
+EZ: Extreme 
+(the settings were not this when I entered the BIOS. could have been 6000 Mhz ram with extremes)
+
+
+codellama:7b-instruct-fp16
+* is found to be using CPU and some GPU
+
+Running model: 4/2/2024 8:40:09 PM phi:2.7b-chat-v2-q5_K_S, prompt: Design a database schema for an online shopping system.
+Exception has occurred: CLR/System.NullReferenceException
+An exception of type 'System.NullReferenceException' occurred in System.Private.CoreLib.dll but was not handled in user code: 'Object reference not set to an instance of an object.'
+   at OllamaBenchmark.<RunAsync>d__3.MoveNext() in C:\Users\wardm\source\research\.NET\ai_bench\PromptBench\OllamaBench.cs:line 42
+   at Program.<<Main>$>d__0.MoveNext() in C:\Users\wardm\source\research\.NET\ai_bench\PromptBench\Program.cs:line 48
+
+
+Running model: 4/2/2024 9:02:48 PM mixtral:instruct, prompt: How to make a sandwich
+Exception has occurred: CLR/System.Net.Http.HttpIOException
+An exception of type 'System.Net.Http.HttpIOException' occurred in System.Private.CoreLib.dll but was not handled in user code: 'The response ended prematurely.'
+   at System.Net.Http.HttpConnection.<FillAsync>d__83.MoveNext()
+   at System.Net.Http.HttpConnection.ChunkedEncodingReadStream.Read(Span`1 buffer)
+   at System.IO.StreamReader.ReadBuffer()
+   at OllamaSharp.OllamaApiClient.<ProcessStreamedCompletionResponseAsync>d__30.MoveNext()
+   at OllamaSharp.OllamaApiClient.<GenerateCompletion>d__24.MoveNext()
+   at OllamaSharp.OllamaApiClient.<GetCompletion>d__22.MoveNext()
+   at OllamaBenchmark.<RunAsync>d__3.MoveNext() in C:\Users\wardm\source\research\.NET\ai_bench\PromptBench\OllamaBench.cs:line 38
+   at Program.<<Main>$>d__0.MoveNext() in C:\Users\wardm\source\research\.NET\ai_bench\PromptBench\Program.cs:line 48
+
+
+
+Running model: 4/3/2024 8:52:41 AM mixtral:8x7b-instruct-v0.1-q3_K_L, prompt: What are the benefits of exercise?
+   Exception has occurred: CLR/System.Net.Http.HttpIOException
+An exception of type 'System.Net.Http.HttpIOException' occurred in System.Private.CoreLib.dll but was not handled in user code: 'The response ended prematurely.'
+   at System.Net.Http.HttpConnection.<FillAsync>d__83.MoveNext()
+   at System.Net.Http.HttpConnection.ChunkedEncodingReadStream.Read(Span`1 buffer)
+   at System.IO.StreamReader.ReadBuffer()
+   at System.IO.StreamReader.get_EndOfStream()
+   at OllamaSharp.OllamaApiClient.<ProcessStreamedCompletionResponseAsync>d__30.MoveNext()
+   at OllamaSharp.OllamaApiClient.<GenerateCompletion>d__24.MoveNext()
+   at OllamaSharp.OllamaApiClient.<GetCompletion>d__22.MoveNext()
+   at OllamaBenchmark.<RunAsync>d__3.MoveNext() in C:\Users\wardm\source\research\.NET\ai_bench\PromptBench\OllamaBench.cs:line 38
+   at Program.<<Main>$>d__0.MoveNext() in C:\Users\wardm\source\research\.NET\ai_bench\PromptBench\Program.cs:line 48

@@ -1,0 +1,7 @@
+XMP II: 6800MHZ
+EZ: NORMAL
+
+
+
+"deepseek-coder:instruct"
+"slot context shift","n_cache_tokens":2048,"n_ctx":2048,"n_discard":1023,"n_keep":1

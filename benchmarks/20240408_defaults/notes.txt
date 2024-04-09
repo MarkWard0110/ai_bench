@@ -1,0 +1,8 @@
+BIO Defaults: G.SKILL
+
+Usign default temperature
+timeout is 5 minutes
+
+
+Running model: 4/8/2024 6:50:49 PM llama2:13b-text, prompt: Generate a summary of the book 'To Kill a Mockingbird' by Harper Lee.
+ * repeating log line

@@ -1,0 +1,11 @@
+RAM set to XMP I: 6000 MHZ
+EZ config: Normal
+
+
+Running model: 4/2/2024 1:19:28 PM deepseek-coder:instruct, prompt: Design a database schema for an online shopping system.
+* "slot context shift","n_cache_tokens":2048,"n_ctx":2048,"n_discard":1023,"n_keep":1
+* stopping the program stopped the invoke request.
+
+Running model: 4/2/2024 2:42:15 PM deepseek-coder:instruct, prompt: Find the shortest path between two nodes in a graph using Dijkstra's algorithm.
+* "slot context shift","n_cache_tokens":2048,"n_ctx":2048,"n_discard":1023,"n_keep":1
+

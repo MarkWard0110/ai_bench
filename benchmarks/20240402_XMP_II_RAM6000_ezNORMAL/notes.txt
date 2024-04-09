@@ -1,0 +1,13 @@
+XMP II: 6000 MHz: some changes to XMP I 6000MHz
+EZ: NORMAL
+
+Running model: 4/2/2024 4:03:51 PM phi:2.7b-chat-v2-q5_K_M, prompt: As an event planning assistant, your task is to organize a detailed schedule for a three-day corporate retreat. You must: 
+Got a null exception error 
+Exception has occurred: CLR/System.NullReferenceException
+An exception of type 'System.NullReferenceException' occurred in System.Private.CoreLib.dll but was not handled in user code: 'Object reference not set to an instance of an object.'
+   at OllamaBenchmark.<RunAsync>d__3.MoveNext() in C:\Users\wardm\source\research\.NET\ai_bench\PromptBench\OllamaBench.cs:line 42
+   at Program.<<Main>$>d__0.MoveNext() in C:\Users\wardm\source\research\.NET\ai_bench\PromptBench\Program.cs:line 48
+
+Loop
+Running model: 4/2/2024 4:47:55 PM deepseek-coder:instruct, prompt: Design a database schema for an online shopping system.
+* "slot context shift","n_cache_tokens":2048,"n_ctx":2048,"n_discard":1023,"n_keep":1
