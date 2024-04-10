@@ -78,7 +78,7 @@ public class OllamaBenchmark
                     Prompt = prompt,
                     // Options = new RequestOptions
                     // {
-                    //     Temperature = 0.9f
+                    //     Temperature = 0.1f
                     // }
                 };
 
