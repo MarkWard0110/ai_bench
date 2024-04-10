@@ -6,8 +6,24 @@ var ollamaBenchmark = new OllamaBenchmark();
 var models = await ollamaBenchmark.GetModels();
 
 var modelIgnoreList = new string[]{
+    // takes too long is measured against a 5 minute timeout.
     "llama2:70b-chat", // takes too long to respond
-    
+    "llama2:13b-text", // takes too long to respond and repeats generated text
+    "llama2:7b-text", // repeats data and does not respond
+    "llama2:70b-text", // repeats data and does not respond
+    "mixtral:8x7b-text-v0.1-q4_0", // takes too long to respond and repeats generated text
+    "codellama:70b-code", // takes too long and seems to be missing some output
+    "codellama:70b-instruct",
+    "codellama:70b-python",
+    "codellama:34b-code", // takes too long but not fully measured
+    "codellama:13b-code", // might loop on generation
+    "codellama:7b-code", // takes too long not fully measured - might be looping in generation.
+    "codellama:7b-python", // appears to be looping in generation
+    "codellama:34b-python", // might loop on generation
+    "codellama:13b-python", // might loop on generation
+    "gemma:2b-text", // loops on generation
+    "gemma:7b-text", // may repeate on generation
+    "orca-mini:70b", // too many long responses
 };
 
 models = models.Where(x => !modelIgnoreList.Contains(x)).ToArray();

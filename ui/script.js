@@ -93,8 +93,8 @@ function sortColumn(columnId) {
 
     // Sort rows based on the content of the clicked column
     rowsArray.sort((rowA, rowB) => {
-        let cellA = rowA.cells[columnIndex].innerText.toLowerCase();
-        let cellB = rowB.cells[columnIndex].innerText.toLowerCase();
+        let cellA = rowA.cells[columnIndex].textContent.toLowerCase();
+        let cellB = rowB.cells[columnIndex].textContent.toLowerCase();
 
         // Convert to appropriate format for comparison based on column
         if (columnId === 'duration') {
