@@ -1,0 +1,6 @@
+XMP I: 6400
+Bios: EZ:Normal/Defaults
+Fans: Full
+
+Cooler: Arctic
+

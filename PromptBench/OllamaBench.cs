@@ -76,10 +76,10 @@ public class OllamaBenchmark
                 {
                     Model = model,
                     Prompt = prompt,
-                    // Options = new RequestOptions
-                    // {
-                    //     Temperature = 0.1f
-                    // }
+                    Options = new RequestOptions
+                    {
+                        Temperature = 0.0f
+                    }
                 };
 
                 var timeout = TimeSpan.FromMinutes(5);
@@ -105,7 +105,6 @@ public class OllamaBenchmark
                 results[model][prompt] = elapsed;
                 var tokensPerSecond = modelResponse.Metadata != null ? modelResponse.Metadata.EvalCount / (modelResponse.Metadata.EvalDuration / 1e9) : -1;
                 SaveRecord(model, prompt, elapsed, modelResponse.Response, tokensPerSecond);
-
             }
         }
         return results;

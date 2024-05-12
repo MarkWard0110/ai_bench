@@ -1,0 +1,7 @@
+KINGSTON 6400
+EZ: EXTREME
+
+Timeout 5 minutes
+Temperature: default
+
+Had a hard OS crash.  CPU was stuck reported in console

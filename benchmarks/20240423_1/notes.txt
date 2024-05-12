@@ -1,0 +1,6 @@
+built from source!
+it is missing GPU support
+
+BIOS: normal, Intel Limits, XMP II 6400
+Fan: FULL
+

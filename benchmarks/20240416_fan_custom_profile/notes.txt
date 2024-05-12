@@ -1,0 +1,2 @@
+Custom FAN profile : attempt a quieter profile but higher than turbo on most fans.  some fans are configured to turbo.
+

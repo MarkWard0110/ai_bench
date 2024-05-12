@@ -24,6 +24,8 @@ var modelIgnoreList = new string[]{
     "gemma:2b-text", // loops on generation
     "gemma:7b-text", // may repeate on generation
     "orca-mini:70b", // too many long responses
+    "deepseek-coder:1.3b-base", // long response times goes into loop
+    "mistral:7b-text", // text are weird right?
 };
 
 models = models.Where(x => !modelIgnoreList.Contains(x)).ToArray();

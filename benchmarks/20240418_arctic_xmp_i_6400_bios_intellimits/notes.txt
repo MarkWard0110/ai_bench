@@ -1,0 +1,6 @@
+XMP I 6400
+FANS Full
+EZ: Normal
+Bios Optimized: Disabled (Intel default)
+Cooler: Arctic
+
