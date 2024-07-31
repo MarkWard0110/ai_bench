@@ -1,0 +1,11 @@
+after 0.1.38 a bug has developed that corrupts generation output.  the corruption even carries over into other sessions.
+
+This is an attempt to see if the ai_bench can detect the issue.
+
+1. run against the 0.1.38 to get a baseline prompt and response
+2. run against the last working commit 
+3. run against the first bad commit
+4. run against `main`
+
+
+initial test didn't show any differences in the generation.  the bug might only exist in the chat API

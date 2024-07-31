@@ -1,0 +1,6 @@
+ollama version is 0.1.45
+
+testing to find out if models that used to be all GPU are now being split to CPU
+
+trimming out models that are just too big to fit in vram
+pulling model tags of k-quant
