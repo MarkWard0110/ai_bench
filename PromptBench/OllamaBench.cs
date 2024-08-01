@@ -3,22 +3,25 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using CsvHelper;
-using OllamaSharp;
-using OllamaSharp.Models;
+using BAIsic.LlmApi.Ollama;
 
 public class OllamaBenchmark
 {
-    private OllamaApiClient _ollama;
+    private OllamaClient _ollama;
     private HashSet<string> _runHistory;
-
-    public OllamaBenchmark()
+    private const int TimeoutMinutes = 20;
+    public OllamaBenchmark(string ollamaApiUrl)
     {
-        _ollama = new OllamaApiClient("http://quorra.homelan.binaryward.com:11434");
+        _ollama = new OllamaClient(new HttpClient()
+        {
+            BaseAddress = new Uri(ollamaApiUrl),
+            Timeout = TimeSpan.FromMinutes(TimeoutMinutes)
+        });
     }
 
     public async Task<string[]> GetModels()
     {
-        var models = await _ollama.ListLocalModels();
+        var models = await _ollama.ListLocalModelsAsync();
         return models.Select(m => m.Name).ToArray();
     }
 
@@ -72,29 +75,46 @@ public class OllamaBenchmark
                 }
 
                 var stopwatch = Stopwatch.StartNew();
-                var modelRequest = new GenerateCompletionRequest
+
+                var chatRequest = new ChatRequest
                 {
                     Model = model,
-                    Prompt = prompt,
+                    Messages = [new Message
+                    {
+                        Role = "user",
+                        Content = prompt
+                    }],
                     Options = new RequestOptions
                     {
-                        Temperature = 0.0f
-                    }
+                        Temperature = 0.0f,
+                        TopP = 0.0f,
+                    },
+                    Stream = false
                 };
 
-                var timeout = TimeSpan.FromMinutes(5);
+                var timeout = TimeSpan.FromMinutes(TimeoutMinutes);
 
                 using var cts = new CancellationTokenSource(timeout);
 
-                ConversationContextWithResponse? modelResponse = null;
+                ChatResponse? modelResponse = null;
                 try
                 {
-                    modelResponse = await _ollama.GetCompletion(modelRequest, cts.Token);
+                    modelResponse = await _ollama.InvokeChatCompletionAsync(chatRequest, cancellationToken: cts.Token);
                 }
                 catch (TaskCanceledException)
                 {
-                    modelResponse = new ConversationContextWithResponse(string.Empty, [], null);
+                    modelResponse = new ChatResponse()
+                    {
+                        Message = new Message()
+                        {
+                            Content = "<timeout waiting for a response>",
+                            Role = string.Empty
+                        },
+                        EvalCount = -1,
+                        EvalDuration = -1
+                    };
                 }
+                
                 if (cts.Token.IsCancellationRequested)
                 {
                     Console.WriteLine($"Model {model} timed out for prompt {prompt}");
@@ -103,8 +123,8 @@ public class OllamaBenchmark
                 stopwatch.Stop();
                 var elapsed = !cts.Token.IsCancellationRequested ? stopwatch.Elapsed : TimeSpan.MinValue;
                 results[model][prompt] = elapsed;
-                var tokensPerSecond = modelResponse.Metadata != null ? modelResponse.Metadata.EvalCount / (modelResponse.Metadata.EvalDuration / 1e9) : -1;
-                SaveRecord(model, prompt, elapsed, modelResponse.Response, tokensPerSecond);
+                var tokensPerSecond = modelResponse.EvalCount < 0 ? -1 : modelResponse.EvalCount / (modelResponse.EvalDuration / 1e9);
+                SaveRecord(model, prompt, elapsed, modelResponse.Message!.Content, tokensPerSecond!.Value);
             }
         }
         return results;

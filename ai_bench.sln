@@ -5,6 +5,10 @@ VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PromptBench", "PromptBench\PromptBench.csproj", "{77C393D1-A97D-4D5E-8DFC-9FC8E4F254D2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bAIsic", "bAIsic", "{6789819B-6836-458E-9F3A-1DD84CAB9509}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BAIsic.LlmApi.Ollama", "bAIsic\src\BAIsic.LlmApi.Ollama\BAIsic.LlmApi.Ollama.csproj", "{FB8B17C4-D08D-47EF-9F38-328BF4A04CB9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,9 +19,16 @@ Global
 		{77C393D1-A97D-4D5E-8DFC-9FC8E4F254D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77C393D1-A97D-4D5E-8DFC-9FC8E4F254D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{77C393D1-A97D-4D5E-8DFC-9FC8E4F254D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB8B17C4-D08D-47EF-9F38-328BF4A04CB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB8B17C4-D08D-47EF-9F38-328BF4A04CB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB8B17C4-D08D-47EF-9F38-328BF4A04CB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB8B17C4-D08D-47EF-9F38-328BF4A04CB9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{FB8B17C4-D08D-47EF-9F38-328BF4A04CB9} = {6789819B-6836-458E-9F3A-1DD84CAB9509}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C101BBC9-CBA3-4029-B0C0-004C01368153}

@@ -1,8 +1,7 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿
+Console.WriteLine("ai_bench!");
 
-Console.WriteLine("Hello, World!");
-
-var ollamaBenchmark = new OllamaBenchmark();
+var ollamaBenchmark = new OllamaBenchmark("http://quorra.homelan.binaryward.com:11434");
 var models = await ollamaBenchmark.GetModels();
 
 var modelIgnoreList = new string[]{
@@ -26,6 +25,7 @@ var modelIgnoreList = new string[]{
     "orca-mini:70b", // too many long responses
     "deepseek-coder:1.3b-base", // long response times goes into loop
     "mistral:7b-text", // text are weird right?
+    "nomic-embed-text:137m-v1.5-fp16", // does not support chat - embedding model
 };
 
 models = models.Where(x => !modelIgnoreList.Contains(x)).ToArray();

@@ -8,12 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    
+    <ProjectReference Include="..\bAIsic\src\BAIsic.LlmApi.Ollama\BAIsic.LlmApi.Ollama.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="31.0.3" />
-    <PackageReference Include="OllamaSharp" Version="1.1001.3" />
   </ItemGroup>
 
 </Project>
