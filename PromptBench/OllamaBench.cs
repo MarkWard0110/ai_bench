@@ -9,7 +9,7 @@ public class OllamaBenchmark
 {
     private OllamaClient _ollama;
     private HashSet<string> _runHistory;
-    private const int TimeoutMinutes = 20;
+    private const int TimeoutMinutes = 30;
     public OllamaBenchmark(string ollamaApiUrl)
     {
         _ollama = new OllamaClient(new HttpClient()
@@ -114,7 +114,7 @@ public class OllamaBenchmark
                         EvalDuration = -1
                     };
                 }
-                
+
                 if (cts.Token.IsCancellationRequested)
                 {
                     Console.WriteLine($"Model {model} timed out for prompt {prompt}");

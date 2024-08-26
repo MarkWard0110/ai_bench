@@ -1,0 +1,1 @@
+This is based on the BIOS version 1661 with the configuration known as 04
