@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\bAIsic\src\BAIsic.Interlocutor.Ollama\BAIsic.Interlocutor.Ollama.csproj" />
+    <ProjectReference Include="..\bAIsic\src\BAIsic.Interlocutor\BAIsic.Interlocutor.csproj" />
+    <ProjectReference Include="..\bAIsic\src\BAIsic.LlmApi.Ollama\BAIsic.LlmApi.Ollama.csproj" />
+  </ItemGroup>
+
+</Project>
