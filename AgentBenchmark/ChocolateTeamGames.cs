@@ -17,8 +17,9 @@ namespace AgentBenchmark
 
 Task:
   1. Classify the conversation: 
-    * Not Correct: Classify the conversation as not correct if it does not contain the correct answers. 
-    * Correct: Classify the conversation as correct if it contains the correct answers.
+    * Not Correct: Classify the conversation as not correct if it does not contain the correct answers.
+    * Not Correct: Classify the conversation as not correct if any answer is '?'.
+    * Correct: Classify the conversation as correct if it contains all the correct answers for all players.  It must contain the full answer.  Verify that their answers match the correct ones
 ";
         }
         private static string BuildTallyAnswer(Dictionary<string, int> answers)
@@ -55,6 +56,30 @@ Task:
             {
                 sb.AppendLine($"{pair.Key}: {pair.Value}");
             }
+
+            return sb.ToString();
+        }
+
+        private static string BuildOddEvenAnswer(Dictionary<string, int> answers)
+        {
+            var sb = new System.Text.StringBuilder();
+            List<string> odd = [];
+            List<string> even = [];
+            foreach (var pair in answers)
+            {
+                if (pair.Value % 2 == 0)
+                {
+                    even.Add(pair.Key);
+                }
+                else
+                {
+                    odd.Add(pair.Key);
+                }
+                
+            }
+
+            sb.AppendLine($"odd:[{string.Join(",", odd)}]");
+            sb.AppendLine($"even:[{string.Join(",", even)}]");
 
             return sb.ToString();
         }
@@ -224,6 +249,25 @@ C1:?
 C2:?
 }
 NEXT: B1
+", expectedAnswer);
+        }
+
+        public static (string GameName, string GamePrompt, string CheckAnswerPrompt) OddEvenV1(Dictionary<string, int> secretValues)
+        {
+            var expectedAnswer = BuildCheckAnswerPrompt(BuildOddEvenAnswer(secretValues));
+
+            return ($"{RootGameName}/OddEvenV1", @"The task is determining who has the odd or even chocolate count among the nine players. After completing the task, each team lead must call on another team.
+The list of odd and even is tracked in JSON format, and every player must answer in JSON format.
+{
+odd:[]
+even:[]
+}
+
+The termination must include the JSON format with all players in the odd and even lists.
+
+When answering, state whether your count is odd or even. 
+When answering, must add your name to the odd or even list.
+All players must add their names to the odd or even list.
 ", expectedAnswer);
         }
     }

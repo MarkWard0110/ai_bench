@@ -94,7 +94,12 @@ foreach (var model in models)
                 secretValues[nodeId] = secretValue;
             }
         }
+
         // Tally
+        await foreach (var reportResult in ChocolateTeamTallyBenchmark.All_Benchmarks(secretValues, model, checkModel, httpClient, requestOptions))
+        {
+            UpdateBenchmarkData(benchmarkData, reportResult, model);
+        }
         //UpdateBenchmarkData(benchmarkData, await ChocolateTeamTallyBenchmark.AutoGenTally_AutoGenSelector_AutoGenAgent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
         //UpdateBenchmarkData(benchmarkData, await ChocolateTeamTallyBenchmark.AutoGenTally_BAIsicV1Selector_AutoGenV2Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
         //UpdateBenchmarkData(benchmarkData, await ChocolateTeamTallyBenchmark.TallyV1_BAIsicV1Selector_ChocolateTeamV1Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
@@ -106,7 +111,7 @@ foreach (var model in models)
         //UpdateBenchmarkData(benchmarkData, await ChocolateTeamTallyBenchmark.TallyV2_BAIsicV1Selector_ChocolateTeamV3_1Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
 
         // Report
-        await foreach(var reportResult in ChocolateTeamReportBenchmark.All_Benchmarks(secretValues, model, checkModel, httpClient, requestOptions))
+        await foreach (var reportResult in ChocolateTeamReportBenchmark.All_Benchmarks(secretValues, model, checkModel, httpClient, requestOptions))
         {
             UpdateBenchmarkData(benchmarkData, reportResult, model);
         }
@@ -118,6 +123,11 @@ foreach (var model in models)
         //UpdateBenchmarkData(benchmarkData, await ChocolateTeamReportBenchmark.ReportV1_BAIsicV1Selector_ChocolateTeamV3Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
         //UpdateBenchmarkData(benchmarkData, await ChocolateTeamReportBenchmark.ReportV1_BAIsicV1Selector_ChocolateTeamV3_1Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
 
+        // Odd/Even
+        await foreach (var reportResult in ChocolateTeamOddEvenBenchmark.All_Benchmarks(secretValues, model, checkModel, httpClient, requestOptions))
+        {
+            UpdateBenchmarkData(benchmarkData, reportResult, model);
+        }
 
         Console.WriteLine(WriteStatus(benchmarkData, maxRoundCount));
         Console.WriteLine($"Round {t} done");
@@ -288,7 +298,7 @@ static void SaveBenchmarkCsv(Dictionary<string, Dictionary<string, int>> testRes
                     values.Add(0); // Add 0 value for missing keys
                 }
             }
-            int score = total > 0 ? (pass / total) * 100 : 0;
+            var score = total > 0 ? ((double)pass / total) * 100 : 0;
             writer.WriteLine($"\"{item.Key}\",{score}," + string.Join(",", values));
         }
     }

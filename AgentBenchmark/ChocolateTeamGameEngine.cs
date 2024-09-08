@@ -15,7 +15,7 @@ namespace AgentBenchmark
         public static async Task<(string BenchmarkName, string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult)> RunBenchmark(Dictionary<string, int> secretValues, string model, string checkModel, HttpClient httpClient, RequestOptions? requestOptions, (string GameName, string GamePrompt, string CheckAnswerPrompt) game, (string SelectorName, LlmSelectSpeakerAgentConfig Config) selector, (string AgentName, string TeamLeadSystemPrompt, string TeamMemberSystemPrompt) agent)
         {
             var benchmarkName = $"{game.GameName}/{selector.SelectorName}/{agent.AgentName}";
-            Console.WriteLine($"Benchmark: {benchmarkName}");
+            Console.WriteLine($"Benchmark: {model}/{benchmarkName}");
 
             var numberTeamConfig = new ChocolateTeamConfig(
                 TeamLeadSystemPrompt: agent.TeamLeadSystemPrompt,
