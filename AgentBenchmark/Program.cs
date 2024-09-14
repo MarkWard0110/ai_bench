@@ -21,7 +21,7 @@ var requestOptions = new RequestOptions()
     TopP = 0.1f,
 };
 
-int maxRoundCount = 3;
+int maxRoundCount = 1;
 Dictionary<string, Dictionary<string, int>> allBenchmarkData = [];
 
 var checkModel = "llama3:70b-instruct-q6_K";
@@ -30,17 +30,17 @@ var checkModel = "llama3:70b-instruct-q6_K";
 //var checkModel = "llama3:70b-instruct-q6_K";
 //var checkModel = model;
 string[] models = [
-    "llama3:8b-instruct-q2_K",
-    "llama3:8b-instruct-q4_0",
-    "llama3:8b-instruct-q6_K",
-    "llama3:8b-instruct-q8_0",
-    "llama3:8b-instruct-fp16",
+    //"llama3:8b-instruct-q2_K",
+    //"llama3:8b-instruct-q4_0",
+    //"llama3:8b-instruct-q6_K",
+    //"llama3:8b-instruct-q8_0",
+    //"llama3:8b-instruct-fp16",
 
-    "llama3.1:8b-instruct-q2_K",
-    "llama3.1:8b-instruct-q4_0",
-    "llama3.1:8b-instruct-q6_K",
-    "llama3.1:8b-instruct-q8_0",
-    "llama3.1:8b-instruct-fp16",
+    //"llama3.1:8b-instruct-q2_K",
+    //"llama3.1:8b-instruct-q4_0",
+    //"llama3.1:8b-instruct-q6_K",
+    //"llama3.1:8b-instruct-q8_0",
+    //"llama3.1:8b-instruct-fp16",
 
     //"phi3:3.8b-mini-4k-instruct-fp16",
     //"phi3:14b-medium-4k-instruct-fp16",
@@ -57,21 +57,21 @@ string[] models = [
 
     //"mistral:7b-instruct-v0.3-fp16",
 
-    //"llama3:70b-instruct-q2_K",
-    //"llama3:70b-instruct-q4_0",
-    //"llama3:70b-instruct-q6_K",
-    //"llama3:70b-instruct-q8_0",
+    "llama3:70b-instruct-q2_K",
+    "llama3:70b-instruct-q4_0",
+    "llama3:70b-instruct-q6_K",
+    "llama3:70b-instruct-q8_0",
 
-    //"llama3.1:70b-instruct-q6_K",
-    //"llama3.1:70b-instruct-q8_0",
+    "llama3.1:70b-instruct-q2_K",
+    "llama3.1:70b-instruct-q4_0",
+    "llama3.1:70b-instruct-q6_K",
+    "llama3.1:70b-instruct-q8_0",
 
     //"qwen2:0.5b-instruct-fp16",
     //"qwen2:1.5b-instruct-fp16",
     //"qwen2:7b-instruct-fp16",
     //"qwen2-math:1.5b-instruct-fp16",
     //"qwen2-math:7b-instruct-fp16",
-
-    //"reflection:70b-q6_K",
 ];
 
 Console.WriteLine($"Check Model: {checkModel}");
@@ -100,6 +100,7 @@ foreach (var model in models)
         {
             UpdateBenchmarkData(benchmarkData, reportResult, model);
         }
+
         //UpdateBenchmarkData(benchmarkData, await ChocolateTeamTallyBenchmark.AutoGenTally_AutoGenSelector_AutoGenAgent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
         //UpdateBenchmarkData(benchmarkData, await ChocolateTeamTallyBenchmark.AutoGenTally_BAIsicV1Selector_AutoGenV2Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
         //UpdateBenchmarkData(benchmarkData, await ChocolateTeamTallyBenchmark.TallyV1_BAIsicV1Selector_ChocolateTeamV1Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
@@ -122,6 +123,9 @@ foreach (var model in models)
         //UpdateBenchmarkData(benchmarkData, await ChocolateTeamReportBenchmark.ReportV1_BAIsicV1Selector_ChocolateTeamV2_1Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
         //UpdateBenchmarkData(benchmarkData, await ChocolateTeamReportBenchmark.ReportV1_BAIsicV1Selector_ChocolateTeamV3Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
         //UpdateBenchmarkData(benchmarkData, await ChocolateTeamReportBenchmark.ReportV1_BAIsicV1Selector_ChocolateTeamV3_1Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
+        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamReportBenchmark.ReportV1_BAIsicV1Selector_ChocolateTeamV4Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
+        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamReportBenchmark.ReportV1_BAIsicV1Selector_ChocolateTeamV5Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
+
 
         // Odd/Even
         await foreach (var reportResult in ChocolateTeamOddEvenBenchmark.All_Benchmarks(secretValues, model, checkModel, httpClient, requestOptions))
@@ -134,14 +138,15 @@ foreach (var model in models)
         Console.WriteLine("");
     }
 
+    SaveBenchmark(benchmarkData);
     allBenchmarkData = allBenchmarkData.Concat(benchmarkData).ToDictionary(x => x.Key, x => x.Value);
 }
 
 Console.WriteLine("Agent Benchmark complete!");
 var benchmarkResults = WriteStatus(allBenchmarkData, maxRoundCount);
 Console.WriteLine(benchmarkResults);
-SaveResults(benchmarkResults);
-SaveBenchmark(allBenchmarkData);
+SaveTxtResults(benchmarkResults);
+
 
 static void UpdateBenchmarkData(Dictionary<string, Dictionary<string, int>> benchmarkData, (string BenchmarkName, string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult) result, string model)
 {
@@ -304,7 +309,7 @@ static void SaveBenchmarkCsv(Dictionary<string, Dictionary<string, int>> testRes
     }
 }
 
-static void SaveResults(string testResults)
+static void SaveTxtResults(string testResults)
 {
     string filePath = $"{DataDirectory()}/agentbenchmark.txt";
     bool fileExists = File.Exists(filePath);

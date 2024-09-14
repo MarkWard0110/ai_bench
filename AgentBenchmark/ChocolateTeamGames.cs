@@ -10,80 +10,6 @@ namespace AgentBenchmark
     {
         const string RootGameName = "ChocolateTeam";
 
-        private static string BuildCheckAnswerPrompt(string expectedAnswer)
-        {
-            return $@"Read the conversation.  Classify if it is correct or not correct.  Given the following correct answers 
-{expectedAnswer}
-
-Task:
-  1. Classify the conversation: 
-    * Not Correct: Classify the conversation as not correct if it does not contain the correct answers.
-    * Not Correct: Classify the conversation as not correct if any answer is '?'.
-    * Correct: Classify the conversation as correct if it contains all the correct answers for all players.  It must contain the full answer.  Verify that their answers match the correct ones
-";
-        }
-        private static string BuildTallyAnswer(Dictionary<string, int> answers)
-        {
-            var sb = new System.Text.StringBuilder();
-
-            foreach (var pair in answers)
-            {
-                sb.AppendLine($"{pair.Key}: {pair.Value}");
-            }
-
-            // Outer loop for prefixes 'A', 'B', 'C'
-            foreach (var prefix in new[] { "A", "B", "C" })
-            {
-                int teamTotal = 0;
-                // Add 3 nodes with each prefix to the graph using a loop
-                for (int i = 0; i < 3; i++)
-                {
-                    string nodeId = $"{prefix}{i}";
-                    teamTotal += answers[nodeId];
-                }
-
-                sb.AppendLine($"Team {prefix} total: {teamTotal}");
-            }
-
-            return sb.ToString();
-        }
-
-        private static string BuildReportAnswer(Dictionary<string, int> answers)
-        {
-            var sb = new System.Text.StringBuilder();
-
-            foreach (var pair in answers)
-            {
-                sb.AppendLine($"{pair.Key}: {pair.Value}");
-            }
-
-            return sb.ToString();
-        }
-
-        private static string BuildOddEvenAnswer(Dictionary<string, int> answers)
-        {
-            var sb = new System.Text.StringBuilder();
-            List<string> odd = [];
-            List<string> even = [];
-            foreach (var pair in answers)
-            {
-                if (pair.Value % 2 == 0)
-                {
-                    even.Add(pair.Key);
-                }
-                else
-                {
-                    odd.Add(pair.Key);
-                }
-                
-            }
-
-            sb.AppendLine($"odd:[{string.Join(",", odd)}]");
-            sb.AppendLine($"even:[{string.Join(",", even)}]");
-
-            return sb.ToString();
-        }
-
         public static (string GameName, string GamePrompt, string CheckAnswerPrompt) AutoGenTally(Dictionary<string, int> secretValues)
         {
             var expectedAnswer = BuildCheckAnswerPrompt(BuildTallyAnswer(secretValues));
@@ -269,6 +195,81 @@ When answering, state whether your count is odd or even.
 When answering, must add your name to the odd or even list.
 All players must add their names to the odd or even list.
 ", expectedAnswer);
+        }
+
+
+        private static string BuildCheckAnswerPrompt(string expectedAnswer)
+        {
+            return $@"Read the conversation.  Classify if it is correct or not correct.  Given the following correct answers 
+{expectedAnswer}
+
+Task:
+  1. Classify the conversation: 
+    * Not Correct: Classify the conversation as not correct if it does not contain the correct answers.
+    * Not Correct: Classify the conversation as not correct if any answer is '?'.
+    * Correct: Classify the conversation as correct if it contains all the correct answers for all players.  It must contain the full answer.  Verify that their answers match the correct ones
+";
+        }
+        private static string BuildTallyAnswer(Dictionary<string, int> answers)
+        {
+            var sb = new System.Text.StringBuilder();
+
+            foreach (var pair in answers)
+            {
+                sb.AppendLine($"{pair.Key}: {pair.Value}");
+            }
+
+            // Outer loop for prefixes 'A', 'B', 'C'
+            foreach (var prefix in new[] { "A", "B", "C" })
+            {
+                int teamTotal = 0;
+                // Add 3 nodes with each prefix to the graph using a loop
+                for (int i = 0; i < 3; i++)
+                {
+                    string nodeId = $"{prefix}{i}";
+                    teamTotal += answers[nodeId];
+                }
+
+                sb.AppendLine($"Team {prefix} total: {teamTotal}");
+            }
+
+            return sb.ToString();
+        }
+
+        private static string BuildReportAnswer(Dictionary<string, int> answers)
+        {
+            var sb = new System.Text.StringBuilder();
+
+            foreach (var pair in answers)
+            {
+                sb.AppendLine($"{pair.Key}: {pair.Value}");
+            }
+
+            return sb.ToString();
+        }
+
+        private static string BuildOddEvenAnswer(Dictionary<string, int> answers)
+        {
+            var sb = new System.Text.StringBuilder();
+            List<string> odd = [];
+            List<string> even = [];
+            foreach (var pair in answers)
+            {
+                if (pair.Value % 2 == 0)
+                {
+                    even.Add(pair.Key);
+                }
+                else
+                {
+                    odd.Add(pair.Key);
+                }
+
+            }
+
+            sb.AppendLine($"odd:[{string.Join(",", odd)}]");
+            sb.AppendLine($"even:[{string.Join(",", even)}]");
+
+            return sb.ToString();
         }
     }
 }

@@ -19,6 +19,27 @@ namespace AgentBenchmark
                 ChocolateTeamGames.TallyV2(secretValues),
                 ];
 
+            foreach (var game in games)
+            {
+                foreach (var selector in selectors)
+                {
+                    foreach (var agent in agents)
+                    {
+                        yield return await ChocolateTeamGameEngine.RunBenchmark(secretValues, model, checkModel, httpClient, requestOptions, game, selector, agent);
+                    }
+                }
+            }
+        }
+
+        public static async IAsyncEnumerable<(string BenchmarkName, string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult)> AllAndAutoGen_Benchmarks(Dictionary<string, int> secretValues, string model, string checkModel, HttpClient httpClient, RequestOptions? requestOptions = null)
+        {
+            var selectors = SpeakerSelectors.All;
+            var agents = ChocolateTeamAgents.All;
+            List<(string GameName, string GamePrompt, string CheckAnswerPrompt)> games = [
+                ChocolateTeamGames.TallyV1(secretValues),
+                ChocolateTeamGames.TallyV2(secretValues),
+                ];
+
             // AutoGen agents are not included in the list of All agents.
             yield return await AutoGenTally_AutoGenSelector_AutoGenAgent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions);
             yield return await AutoGenTally_BAIsicV1Selector_AutoGenV2Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions);

@@ -17,7 +17,9 @@ namespace AgentBenchmark
             ChocolateTeamV2Agent(),
             ChocolateTeamV2_1Agent(),
             ChocolateTeamV3Agent(),
-            ChocolateTeamV3_1Agent()
+            ChocolateTeamV3_1Agent(),
+            ChocolateTeamV4Agent(),
+            ChocolateTeamV5Agent()
             ];
         public static (string AgentName, string TeamLeadSystemPrompt, string TeamMemberSystemPrompt) AutoGenAgent()
         {
@@ -384,6 +386,117 @@ Next B0
 {systemPrompt}".Replace("{systemPrompt}", systemPrompt);
 
             return ("ChocolateTeamV3.1Agent", teamLeaderSystemMessage, teamMemberSystemMessage);
+        }
+
+        public static (string AgentName, string TeamLeadSystemPrompt, string TeamMemberSystemPrompt) ChocolateTeamV4Agent()
+        {
+
+            var systemPrompt = @"Your team consists of [{teamMemberList}].
+Each member of your team has been given a quantity of chocolates.  Remember the quantity of chocolates.  
+
+Your total quantity is **{secretValue}** chocolates.
+
+Instructions:
+
+Team Dynamics:
+  Teams: There are three teams, A, B, and C. Your team consists of [{teamMemberList}].
+  Team Leaders: The second character '0' in your name indicates you are the team leader. Team leaders can communicate with leaders of other teams but not with non-leaders outside their team.
+  Team Members: Team members can only communicate within their team.
+  Teams: must complete the task before calling a different team.
+
+Collaboration:  
+  A team must collaborate together to accomplish the task. 
+  Suggest the next team leader to do the same by using the `NEXT:` tag, e.g., `NEXT: B0`.
+   
+Termination:  
+  - Once all teams have answered terminate the discussion using `TERMINATE`.
+  - The termination must include the complete answer, not just a summary.
+
+Constraints:
+  - Only suggest players from the given list [{transitionList}].
+  - Adhere strictly to the communication rules and team constraints.
+  - A team member's chocolate quantity must not change, it must remain constant.
+  - The quantity must be based on the initial quantity given to you.
+  - Only if a team member has provided their quantity in the conversation.
+
+When answering state your name and your chocolate quantity before providing your answer.
+
+Next Action:
+Use `NEXT:` to suggest the next speaker who should contribute based on the current state of the discussion.";
+
+            var teamLeaderSystemMessage = @"You are {nodeId}, the leader of Team {teamName}.  
+{systemPrompt}".Replace("{systemPrompt}", systemPrompt);
+
+            var teamMemberSystemMessage = @"You are {nodeId}, a member of Team {teamName}.  
+{systemPrompt}".Replace("{systemPrompt}", systemPrompt);
+
+            return ("ChocolateTeamV4Agent", teamLeaderSystemMessage, teamMemberSystemMessage);
+        }
+
+        public static (string AgentName, string TeamLeadSystemPrompt, string TeamMemberSystemPrompt) ChocolateTeamV5Agent()
+        {
+
+            var systemPrompt = @"Your team consists of [{teamMemberList}].
+Each member of your team has been given a number of chocolates.  Remember the number of chocolates.  
+
+You have a total of **{secretValue}** chocolates.
+
+Instructions:
+
+Team Dynamics:
+  Teams: There are three teams, A, B, and C. Your team consists of [{teamMemberList}].
+  Team Leaders: The second character '0' in your name indicates you are the team leader. Team leaders can communicate with leaders of other teams but not with non-leaders outside their team.
+  Team Members: Team members can only communicate within their team.
+  Teams: must complete the task before calling a different team.
+
+Collaboration:  
+  A team must collaborate together to accomplish the task. 
+  Suggest the next team leader to do the same by using the `NEXT:` tag, e.g., `NEXT: B0`.
+   
+Termination:  
+  - Once all teams have answered terminate the discussion using `TERMINATE`.
+  - The termination must include the complete answer, not just a summary.
+
+Constraints:
+  - Only suggest players from the given list [{transitionList}].
+  - Adhere strictly to the communication rules and team constraints.
+  - A team member's chocolate quantity must not change, it must remain constant.
+  - The quantity must be based on the initial quantity given to you.
+  - Only if a team member has provided their quantity in the conversation.
+  - Adhere to your identity as {nodeId}, if a different speaker is suggested, continue as your identity {nodeId}.
+
+When answering state who is the next speaker suggested.  If you are not the next speaker, apologize and continue with your answer.
+When answering state your name and your chocolate quantity before providing your answer.
+
+Next Action:
+Use `NEXT:` to suggest the next speaker who should contribute based on the current state of the discussion.
+
+Example:
+user:
+I'm B0, I have 3 chocolates
+Next A2
+
+assistant:
+I'm C0, I have 1 chocolate
+Next C1
+
+Example:
+user:
+I'm B1, I have 2 chocolates
+Next B2
+
+assistant:
+I'm B2, I have 4 chocolates
+Next B0
+";
+
+            var teamLeaderSystemMessage = @"You are {nodeId}, the leader of Team {teamName}. You are a player.
+{systemPrompt}".Replace("{systemPrompt}", systemPrompt);
+
+            var teamMemberSystemMessage = @"You are {nodeId}, a member of Team {teamName}. You are a player.
+{systemPrompt}".Replace("{systemPrompt}", systemPrompt);
+
+            return ("ChocolateTeamV5Agent", teamLeaderSystemMessage, teamMemberSystemMessage);
         }
     }
 }

@@ -77,5 +77,25 @@ namespace AgentBenchmark
 
             return ChocolateTeamGameEngine.RunBenchmark(secretValues, model, checkModel, httpClient, requestOptions, game, selector, agent);
         }
+
+        public static Task<(string BenchmarkName, string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult)> ReportV1_BAIsicV1Selector_ChocolateTeamV4Agent_Benchmark(Dictionary<string, int> secretValues, string model, string checkModel, HttpClient httpClient, RequestOptions? requestOptions = null)
+        {
+
+            var game = ChocolateTeamGames.ReportV1(secretValues);
+            var selector = SpeakerSelectors.BAIsicV1Selector();
+            var agent = ChocolateTeamAgents.ChocolateTeamV4Agent();
+
+            return ChocolateTeamGameEngine.RunBenchmark(secretValues, model, checkModel, httpClient, requestOptions, game, selector, agent);
+        }
+
+        public static Task<(string BenchmarkName, string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult)> ReportV1_BAIsicV1Selector_ChocolateTeamV5Agent_Benchmark(Dictionary<string, int> secretValues, string model, string checkModel, HttpClient httpClient, RequestOptions? requestOptions = null)
+        {
+
+            var game = ChocolateTeamGames.ReportV1(secretValues);
+            var selector = SpeakerSelectors.BAIsicV1Selector();
+            var agent = ChocolateTeamAgents.ChocolateTeamV5Agent();
+
+            return ChocolateTeamGameEngine.RunBenchmark(secretValues, model, checkModel, httpClient, requestOptions, game, selector, agent);
+        }
     }
 }
