@@ -10,6 +10,11 @@ namespace AgentBenchmark
     public class SpeakerSelectors
     {
         public static readonly List<(string SelectorName, LlmSelectSpeakerAgentConfig Config)> All = [
+            // AutoGen has been delisted due to its performance with smaller models
+            BAIsicV1Selector(),
+        ];
+
+        public static readonly List<(string SelectorName, LlmSelectSpeakerAgentConfig Config)> AllWithAutoGen = [
             AutoGenSelector(),
             BAIsicV1Selector(),
         ];

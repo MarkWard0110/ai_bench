@@ -24,23 +24,20 @@ var requestOptions = new RequestOptions()
 int maxRoundCount = 1;
 Dictionary<string, Dictionary<string, int>> allBenchmarkData = [];
 
-var checkModel = "llama3:70b-instruct-q6_K";
-//string model = "llama3:8b-instruct-fp16", checkModel = "llama3:70b-instruct-q6_K";
-//var model = "llama3:70b-instruct-q8_0";
 //var checkModel = "llama3:70b-instruct-q6_K";
-//var checkModel = model;
+var checkModel = "llama3:8b-instruct-fp16";
 string[] models = [
+    //"llama3.1:8b-instruct-q2_K",
+    //"llama3.1:8b-instruct-q4_0",
+    "llama3.1:8b-instruct-q6_K",
+    "llama3.1:8b-instruct-q8_0",
+    "llama3.1:8b-instruct-fp16",
+
     //"llama3:8b-instruct-q2_K",
     //"llama3:8b-instruct-q4_0",
     //"llama3:8b-instruct-q6_K",
     //"llama3:8b-instruct-q8_0",
     //"llama3:8b-instruct-fp16",
-
-    //"llama3.1:8b-instruct-q2_K",
-    //"llama3.1:8b-instruct-q4_0",
-    //"llama3.1:8b-instruct-q6_K",
-    //"llama3.1:8b-instruct-q8_0",
-    //"llama3.1:8b-instruct-fp16",
 
     //"phi3:3.8b-mini-4k-instruct-fp16",
     //"phi3:14b-medium-4k-instruct-fp16",
@@ -57,15 +54,15 @@ string[] models = [
 
     //"mistral:7b-instruct-v0.3-fp16",
 
-    "llama3:70b-instruct-q2_K",
-    "llama3:70b-instruct-q4_0",
-    "llama3:70b-instruct-q6_K",
-    "llama3:70b-instruct-q8_0",
+    //"llama3:70b-instruct-q2_K",
+    //"llama3:70b-instruct-q4_0",
+    //"llama3:70b-instruct-q6_K",
+    //"llama3:70b-instruct-q8_0",
 
-    "llama3.1:70b-instruct-q2_K",
-    "llama3.1:70b-instruct-q4_0",
-    "llama3.1:70b-instruct-q6_K",
-    "llama3.1:70b-instruct-q8_0",
+    //"llama3.1:70b-instruct-q2_K",
+    //"llama3.1:70b-instruct-q4_0",
+    //"llama3.1:70b-instruct-q6_K",
+    //"llama3.1:70b-instruct-q8_0",
 
     //"qwen2:0.5b-instruct-fp16",
     //"qwen2:1.5b-instruct-fp16",
@@ -96,36 +93,16 @@ foreach (var model in models)
         }
 
         // Tally
-        await foreach (var reportResult in ChocolateTeamTallyBenchmark.All_Benchmarks(secretValues, model, checkModel, httpClient, requestOptions))
-        {
-            UpdateBenchmarkData(benchmarkData, reportResult, model);
-        }
-
-        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamTallyBenchmark.AutoGenTally_AutoGenSelector_AutoGenAgent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
-        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamTallyBenchmark.AutoGenTally_BAIsicV1Selector_AutoGenV2Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
-        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamTallyBenchmark.TallyV1_BAIsicV1Selector_ChocolateTeamV1Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
-        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamTallyBenchmark.TallyV2_BAIsicV1Selector_ChocolateTeamV2Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
-        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamTallyBenchmark.TallyV2_BAIsicV1Selector_ChocolateTeamV3Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
-
-        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamTallyBenchmark.TallyV1_BAIsicV1Selector_ChocolateTeamV1_1Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
-        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamTallyBenchmark.TallyV2_BAIsicV1Selector_ChocolateTeamV2_1Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
-        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamTallyBenchmark.TallyV2_BAIsicV1Selector_ChocolateTeamV3_1Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
+        //await foreach (var reportResult in ChocolateTeamTallyBenchmark.All_Benchmarks(secretValues, model, checkModel, httpClient, requestOptions))
+        //{
+        //    UpdateBenchmarkData(benchmarkData, reportResult, model);
+        //}
 
         // Report
-        await foreach (var reportResult in ChocolateTeamReportBenchmark.All_Benchmarks(secretValues, model, checkModel, httpClient, requestOptions))
-        {
-            UpdateBenchmarkData(benchmarkData, reportResult, model);
-        }
-
-        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamReportBenchmark.ReportV1_BAIsicV1Selector_ChocolateTeamV1Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
-        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamReportBenchmark.ReportV1_BAIsicV1Selector_ChocolateTeamV1_1Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
-        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamReportBenchmark.ReportV1_BAIsicV1Selector_ChocolateTeamV2Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
-        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamReportBenchmark.ReportV1_BAIsicV1Selector_ChocolateTeamV2_1Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
-        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamReportBenchmark.ReportV1_BAIsicV1Selector_ChocolateTeamV3Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
-        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamReportBenchmark.ReportV1_BAIsicV1Selector_ChocolateTeamV3_1Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
-        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamReportBenchmark.ReportV1_BAIsicV1Selector_ChocolateTeamV4Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
-        //UpdateBenchmarkData(benchmarkData, await ChocolateTeamReportBenchmark.ReportV1_BAIsicV1Selector_ChocolateTeamV5Agent_Benchmark(secretValues, model, checkModel, httpClient, requestOptions).ConfigureAwait(false), model);
-
+        //await foreach (var reportResult in ChocolateTeamReportBenchmark.All_Benchmarks(secretValues, model, checkModel, httpClient, requestOptions))
+        //{
+        //    UpdateBenchmarkData(benchmarkData, reportResult, model);
+        //}
 
         // Odd/Even
         await foreach (var reportResult in ChocolateTeamOddEvenBenchmark.All_Benchmarks(secretValues, model, checkModel, httpClient, requestOptions))

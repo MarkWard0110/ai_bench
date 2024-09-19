@@ -146,7 +146,7 @@ namespace AgentBenchmark
 
             if (!isFail)
             {
-                var checkAnswer = await IsAnswerCorrect(result[0].Conversation.First().Messages.Last(), chocolateTeamConfig.CheckAnswerPrompt, checkModel, httpClient, requestOptions);
+                var checkAnswer = await IsAnswerCorrectSmallLLM(result[0].Conversation.First().Messages.Last(), chocolateTeamConfig.CheckAnswerPrompt, checkModel, httpClient, requestOptions);
                 if (checkAnswer.CheckConversationResult != null)
                 {
                     benchmarkConversationResult.Add(checkAnswer.CheckConversationResult);
@@ -158,18 +158,18 @@ namespace AgentBenchmark
                     isFail = true;
 
                     // identify a reason it failed to get the correct answer
-                    var impersonationAnswer = await IsImpersonating(result, checkModel, httpClient, requestOptions);
+                    //var impersonationAnswer = await IsImpersonating(result, checkModel, httpClient, requestOptions);
 
-                    if (impersonationAnswer.CheckConversationResults != null)
-                    {
-                        benchmarkConversationResult.AddRange(impersonationAnswer.CheckConversationResults);
-                    }
+                    //if (impersonationAnswer.CheckConversationResults != null)
+                    //{
+                    //    benchmarkConversationResult.AddRange(impersonationAnswer.CheckConversationResults);
+                    //}
 
-                    if (impersonationAnswer.IsImpersonating)
-                    {
-                        failReason = AgentBenchmarkConventions.BenchmarkReasons.FailNotCorrectBecauseImpersonation;
-                        isFail = true;
-                    }
+                    //if (impersonationAnswer.IsImpersonating)
+                    //{
+                    //    failReason = AgentBenchmarkConventions.BenchmarkReasons.FailNotCorrectBecauseImpersonation;
+                    //    isFail = true;
+                    //}
                 }                
             }
 
@@ -198,7 +198,7 @@ namespace AgentBenchmark
             var conversation = new DialogueConversation();
             var conversationResult = await conversation.InitiateChat(initiatorAgent, numbersAnswer, llmAgent, maximumTurnCount: 2);
 
-            if (conversationResult.Conversation.Last().Messages.Last().Text.Contains("not correct", StringComparison.OrdinalIgnoreCase))
+            if (conversationResult.Conversation.Last().Messages.Last().Text.Contains("incorrect", StringComparison.OrdinalIgnoreCase))
             {
                 // The answer was classified as not correct
                 return (false, conversationResult);
@@ -213,6 +213,34 @@ namespace AgentBenchmark
                 // The answer was not classified as correct or not correct
                 //return false;
             }
+
+        }
+
+        private static async Task<(bool IsCorrect, ConversationResult? CheckConversationResult)> IsAnswerCorrectSmallLLM(BAIsic.Interlocutor.Message numbersAnswer, string checkAnswerPrompt, string model, HttpClient httpClient, RequestOptions? requestOptions = null)
+        {
+            // get answers (in format for the check answers)
+            var answerText = await GetAnswer(numbersAnswer, model, httpClient, requestOptions);  
+            BAIsic.Interlocutor.Message answer = new(AgentConsts.Roles.User, answerText);
+
+            // check the answer
+            return await IsAnswerCorrect(answer, checkAnswerPrompt, model, httpClient!, requestOptions);
+        }
+
+        private static async Task<string> GetAnswer(BAIsic.Interlocutor.Message numbersAnswer, string model, HttpClient httpClient, RequestOptions? requestOptions = null)
+        {
+            var initiatorAgent = new Agent("feeder");
+            var getAnswerPrompt = @"The user has provided a JSON-formatted answer.
+Output only the JSON provided by the user without making any changes or assumptions.
+
+Without a greeting or additional information.";
+
+            var llmAgent = new Agent("llm", getAnswerPrompt)
+                .AddOllamaGenerateReply(model, httpClient, new OllamaOptions() {  RequestOptions = requestOptions, ResponseFormat = "json"});
+
+            var conversation = new DialogueConversation();
+            var conversationResult = await conversation.InitiateChat(initiatorAgent, numbersAnswer, llmAgent, maximumTurnCount: 1);
+
+            return conversationResult.Conversation.Last().Messages.Last().Text;
 
         }
 
@@ -262,7 +290,7 @@ namespace AgentBenchmark
                     var llmAgent = new Agent("llm", systemPrompt: $@"Task:
   1. Review the conversation and list the name the assistant identifies as.
   2. Classify the conversation: 
-    * Not Correct: Classify the conversation as not correct if the assistant identified other than ""{nodeId}"". 
+    * Incorrect: Classify the conversation as incorrect if the assistant identified other than ""{nodeId}"". 
     * Correct: Classify it as correct if every time the assistant identified as ""{nodeId}"".
 ")
                         .AddOllamaGenerateReply(model, httpClient, requestOptions);
@@ -272,7 +300,7 @@ namespace AgentBenchmark
                     var conversationResult = await conversation.InitiateChat(initiator:initiatorAgent, initialMessage: initialMessage, participant:llmAgent, maximumTurnCount: 2);
                     conversationResults.Add(conversationResult);
 
-                    if (conversationResult.Conversation.Last().Messages.Last().Text.Contains("not correct", StringComparison.OrdinalIgnoreCase))
+                    if (conversationResult.Conversation.Last().Messages.Last().Text.Contains("incorrect", StringComparison.OrdinalIgnoreCase))
                     {
                         // The answer was classified as not correct - having impersonation
                         return (true, conversationResults);

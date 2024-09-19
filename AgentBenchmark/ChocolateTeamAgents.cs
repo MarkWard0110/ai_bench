@@ -10,6 +10,7 @@ namespace AgentBenchmark
     {
         public static readonly List<(string AgentName, string TeamLeadSystemPrompt, string TeamMemberSystemPrompt)> All = [
             // An agent needs to support all chocolate team games
+            // The AutoGen agents only support AutoGen's Tally game
             //AutoGenAgent(),
             //AutoGenV2Agent(),
             ChocolateTeamV1Agent(),
