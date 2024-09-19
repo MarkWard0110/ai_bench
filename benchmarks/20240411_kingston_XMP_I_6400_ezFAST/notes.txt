@@ -1,7 +1,0 @@
-kingston XMP I 6400
-EZ: FAST
-
-Temperature: default
-timeout: 5 minutes
-
-stop testing because the benchmarks appear to be the same as "normal"

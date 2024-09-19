@@ -1,9 +1,0 @@
-HOST:
-BIOS: Intel Limits
-FANS: Full, Arctic 420 AIO
-XMP: XMP II 6400
-
-OLLAMA:
-v0.1.33
-
-Note: The models have been downloaded with new tags so that the specific information is recorded.  Many of them are the same as the shorter ailias tags before.

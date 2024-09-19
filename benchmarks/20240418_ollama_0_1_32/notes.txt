@@ -1,9 +1,0 @@
-upgrade ollama
-
-arctic
-intel limits (bios optimize defaults disabled)
-XMP I 6400
-Fans full
-
-
-Ollama will sometimes run a GPU model on CPU

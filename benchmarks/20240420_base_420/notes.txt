@@ -1,5 +1,0 @@
-xmp _ I 6400
-ez: normal
-intel limits
-AIO 420
-fans full

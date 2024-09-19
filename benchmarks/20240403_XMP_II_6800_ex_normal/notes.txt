@@ -1,5 +1,0 @@
-XMP II: 6800 MHz
-EZ: Normal
-
-Running model: 4/3/2024 9:13:57 AM llama2-uncensored:70b, prompt: How to make a sandwich with a twist
-* Server locked up

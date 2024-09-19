@@ -1,4 +1,0 @@
-DEFAULT bios settings
-
-run with temperature at 0.1 to compare to the temperature 0 run.
-

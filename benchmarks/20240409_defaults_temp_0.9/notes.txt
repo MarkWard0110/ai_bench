@@ -1,3 +1,0 @@
-DEFAULTS BIOS
-
-What happens if temperature is at 0.9?

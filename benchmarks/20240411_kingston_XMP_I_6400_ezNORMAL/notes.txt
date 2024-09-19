@@ -1,5 +1,0 @@
-Kingston Fury: XMP I: 6400MHZ
-EZ:Normal
-
-Temperature: default
-Timeout: 5 minutes

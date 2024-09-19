@@ -1,1 +1,0 @@
-Ollama configured to load models 100% on CPU

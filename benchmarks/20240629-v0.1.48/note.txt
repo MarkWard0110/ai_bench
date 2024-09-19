@@ -1,9 +1,0 @@
-Ollama version v0.1.48
-
-Odd behavior where a model may respond an undefined (might be the sending framework getting an error back from the server)
-
-model's not responding based on certain prompt lengths
-
-The prompts in this test are not long enough to cause the issue.
-
-Began Test (Ollama Log) Jun 30 02:33:17

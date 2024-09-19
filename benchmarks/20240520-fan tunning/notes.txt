@@ -1,1 +1,0 @@
-tuned the fans to be low on < 45C and full 100% at 45C

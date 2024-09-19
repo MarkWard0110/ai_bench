@@ -1,5 +1,0 @@
-XMP I: 6800MHZ
-EZ: NORMAL
-
-Running model: 4/4/2024 4:01:29 PM command-r:35b, prompt: What are the benefits of exercise?
-* Hard lockup on this model and prompt.

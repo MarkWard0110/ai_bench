@@ -1,3 +1,0 @@
-default profile in the BIOS
-
-canceled the run - no issues running up to this point

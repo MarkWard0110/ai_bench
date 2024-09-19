@@ -1,2 +1,0 @@
-ollama --version
-ollama version is 0.3.0

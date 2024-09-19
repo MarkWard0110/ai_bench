@@ -1,8 +1,0 @@
-XMP I 6400
-EZ: normal
-
-5 additional fans
-cpu 2 fan : cha1 -> turbo
-cpu 1 fan -> turbo
-all fans -> turbo
-AIO -> full (i think)

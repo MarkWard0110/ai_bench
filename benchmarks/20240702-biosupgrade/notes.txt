@@ -1,9 +1,0 @@
-BIOS upgrade - 1658
-
-Had to reconfigure the FANS and settings
-
-It has intel defaults but enabled the boost setting.
-
-compare if the performance is the same with cpu bound models
-
-Some of this does not include the updated BIOS because the temperature and performance was not matching the version 1656 BETA
