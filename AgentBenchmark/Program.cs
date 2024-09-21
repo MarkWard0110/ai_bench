@@ -9,48 +9,23 @@ using System.Text.Json;
 
 Console.WriteLine("Agent Benchmark!");
 const int TimeoutMinutes = 30;
-var httpClient = new HttpClient()
-{
-    BaseAddress = new Uri("http://quorra.homelan.binaryward.com:11434"),
-    Timeout = TimeSpan.FromMinutes(TimeoutMinutes)
-};
-var requestOptions = new RequestOptions()
-{
-    NumCtx = 2048,
-    Temperature = 0.1f,
-    TopP = 0.1f,
-};
 
-int maxRoundCount = 1;
-Dictionary<string, Dictionary<string, int>> allBenchmarkData = [];
-
-//var checkModel = "llama3:70b-instruct-q6_K";
-var checkModel = "llama3:8b-instruct-fp16";
 string[] models = [
+    //"llama3:8b-instruct-q2_K",
+    "llama3:8b-instruct-q4_0",
+    "llama3:8b-instruct-q6_K",
+    "llama3:8b-instruct-q8_0",
+    "llama3:8b-instruct-fp16",
+
     //"llama3.1:8b-instruct-q2_K",
-    //"llama3.1:8b-instruct-q4_0",
+    "llama3.1:8b-instruct-q4_0",
     "llama3.1:8b-instruct-q6_K",
     "llama3.1:8b-instruct-q8_0",
     "llama3.1:8b-instruct-fp16",
 
-    //"llama3:8b-instruct-q2_K",
-    //"llama3:8b-instruct-q4_0",
-    //"llama3:8b-instruct-q6_K",
-    //"llama3:8b-instruct-q8_0",
-    //"llama3:8b-instruct-fp16",
-
     //"phi3:3.8b-mini-4k-instruct-fp16",
     //"phi3:14b-medium-4k-instruct-fp16",
-    //"phi3.5:3.8b-mini-instruct-fp16",
-
-    //"gemma2:2b-instruct-fp16",
-    //"gemma2:9b-instruct-q6_K",
-    //"gemma2:9b-instruct-q8_0",
-    //"gemma2:9b-instruct-fp16",
-
-    //"glm4:9b-chat-fp16",
-
-    //"hermes3:8b-llama3.1-fp16",
+    //"phi3.5:3.8b-mini-instruct-fp16",m
 
     //"mistral:7b-instruct-v0.3-fp16",
 
@@ -70,10 +45,24 @@ string[] models = [
     //"qwen2-math:1.5b-instruct-fp16",
     //"qwen2-math:7b-instruct-fp16",
 ];
+var httpClient = new HttpClient()
+{
+    BaseAddress = new Uri("http://quorra.homelan.binaryward.com:11434"),
+    Timeout = TimeSpan.FromMinutes(TimeoutMinutes)
+};
+var requestOptions = new RequestOptions()
+{
+    NumCtx = 2048,
+    Temperature = 0.1f,
+    TopP = 0.1f,
+};
 
-Console.WriteLine($"Check Model: {checkModel}");
+Dictionary<string, Dictionary<string, int>> allBenchmarkData = [];
+
 string[] teams = ["A", "B", "C"];
 var teamCount = 3;
+
+int maxRoundCount = 1;
 foreach (var model in models)
 {
     Dictionary<string, Dictionary<string, int>> benchmarkData = [];
@@ -93,19 +82,19 @@ foreach (var model in models)
         }
 
         // Tally
-        //await foreach (var reportResult in ChocolateTeamTallyBenchmark.All_Benchmarks(secretValues, model, checkModel, httpClient, requestOptions))
-        //{
-        //    UpdateBenchmarkData(benchmarkData, reportResult, model);
-        //}
+        await foreach (var reportResult in ChocolateTeamTallyBenchmark.All_Benchmarks(secretValues, model, httpClient, requestOptions))
+        {
+            UpdateBenchmarkData(benchmarkData, reportResult, model);
+        }
 
         // Report
-        //await foreach (var reportResult in ChocolateTeamReportBenchmark.All_Benchmarks(secretValues, model, checkModel, httpClient, requestOptions))
-        //{
-        //    UpdateBenchmarkData(benchmarkData, reportResult, model);
-        //}
+        await foreach (var reportResult in ChocolateTeamReportBenchmark.All_Benchmarks(secretValues, model, httpClient, requestOptions))
+        {
+            UpdateBenchmarkData(benchmarkData, reportResult, model);
+        }
 
         // Odd/Even
-        await foreach (var reportResult in ChocolateTeamOddEvenBenchmark.All_Benchmarks(secretValues, model, checkModel, httpClient, requestOptions))
+        await foreach (var reportResult in ChocolateTeamOddEvenBenchmark.All_Benchmarks(secretValues, model, httpClient, requestOptions))
         {
             UpdateBenchmarkData(benchmarkData, reportResult, model);
         }
@@ -245,8 +234,8 @@ static void SaveBenchmarkCsv(Dictionary<string, Dictionary<string, int>> testRes
     
     var keys = new List<string> {
         AgentBenchmarkConventions.BenchmarkReasons.Pass,
-        AgentBenchmarkConventions.BenchmarkReasons.FailNotCorrect,
-        AgentBenchmarkConventions.BenchmarkReasons.FailNotCorrectBecauseImpersonation,
+        AgentBenchmarkConventions.BenchmarkReasons.FailIncorrect,
+        AgentBenchmarkConventions.BenchmarkReasons.FailIncorrectBecauseImpersonation,
         AgentBenchmarkConventions.BenchmarkReasons.FailMinimumTurnCount,
         AgentBenchmarkConventions.BenchmarkReasons.FailMaximumTurnCount,
     };
@@ -254,7 +243,7 @@ static void SaveBenchmarkCsv(Dictionary<string, Dictionary<string, int>> testRes
     using (StreamWriter writer = new StreamWriter(filePath, append: false))
     {
         // Write the header row
-        writer.WriteLine("\"benchmark\",\"score\"," + string.Join(",", keys.Select(key => $"\"{key}\"")));
+        writer.WriteLine("\"benchmark\",\"score\",\"round total\"," + string.Join(",", keys.Select(key => $"\"{key}\"")));
 
         foreach (var item in testResults)
         {
@@ -281,7 +270,7 @@ static void SaveBenchmarkCsv(Dictionary<string, Dictionary<string, int>> testRes
                 }
             }
             var score = total > 0 ? ((double)pass / total) * 100 : 0;
-            writer.WriteLine($"\"{item.Key}\",{score}," + string.Join(",", values));
+            writer.WriteLine($"\"{item.Key}\",{score},{total}," + string.Join(",", values));
         }
     }
 }

@@ -10,7 +10,7 @@ namespace AgentBenchmark
 {
     public class ChocolateTeamOddEvenBenchmark
     {
-        public static async IAsyncEnumerable<(string BenchmarkName, string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult)> All_Benchmarks(Dictionary<string, int> secretValues, string model, string checkModel, HttpClient httpClient, RequestOptions? requestOptions = null)
+        public static async IAsyncEnumerable<(string BenchmarkName, string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult)> All_Benchmarks(Dictionary<string, int> secretValues, string model, HttpClient httpClient, RequestOptions requestOptions)
         {
             var selectors = SpeakerSelectors.All;
             var agents = ChocolateTeamAgents.All;
@@ -20,7 +20,7 @@ namespace AgentBenchmark
             {
                 foreach (var agent in agents)
                 {
-                    yield return await ChocolateTeamGameEngine.RunBenchmark(secretValues, model, checkModel, httpClient, requestOptions, game, selector, agent);
+                    yield return await ChocolateTeamGameEngine.RunBenchmark(secretValues, model, httpClient, requestOptions, game, selector, agent);
                 }
             }
         }

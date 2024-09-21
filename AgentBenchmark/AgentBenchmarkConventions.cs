@@ -14,8 +14,8 @@ namespace AgentBenchmark
             public const string FailMinimumTurnCount = "fail: minimum turn count";
             public const string FailMaximumTurnCount = "fail: maximum turn count";
             //public const string FailNoTerminate = "fail: no terminate"; // can't happen if max turn count is checked
-            public const string FailNotCorrect = "fail: not correct";
-            public const string FailNotCorrectBecauseImpersonation = "fail: not correct (impersonation)";
+            public const string FailIncorrect = "fail: incorrect";
+            public const string FailIncorrectBecauseImpersonation = "fail: incorrect (impersonation)";
 
         }
     }

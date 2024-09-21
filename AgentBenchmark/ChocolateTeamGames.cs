@@ -180,7 +180,7 @@ NEXT: B1
 
         public static (string GameName, string GamePrompt, string CheckAnswerPrompt) OddEvenV1(Dictionary<string, int> secretValues)
         {
-            var expectedAnswer = BuildCheckAnswerPrompt(BuildOddEvenAnswer(secretValues));
+            var expectedAnswer = BuildCheckAnswerPrompt(BuildOddEvenAnswer(secretValues), "Odd and even are unordered sets.");
 
             return ($"{RootGameName}/OddEvenV1", @"The task is determining who has the odd or even chocolate count among the nine players. After completing the task, each team lead must call on another team.
 The list of odd and even is tracked in JSON format, and every player must answer in JSON format.
@@ -198,29 +198,14 @@ All players must add their names to the odd or even list.
         }
 
 
-        private static string BuildCheckAnswerPrompt(string expectedAnswer)
+        private static string BuildCheckAnswerPrompt(string expectedAnswer, string? claimInstruction = "")
         {
-            return $@"This game has nine players, split equally into Teams A, B, and C. A player's name is two characters, the first character of a player's name is their team, and the second character denotes that if the player is a team leader if it is 0.  The second character is an ID only.
-
-Team A players are [A0, A1, A2].
-Team B players are [B0, B1, B2].
-Team C players are [C0, C1, C2].
-
-Read the conversation.  Classify if it is correct or incorrect based on the following correct answer.
-
-Correct answer:
+            return $@"Document:
 {expectedAnswer}
 
-
-Task:
-  Classify the user's answer: 
-    * Incorrect: Classify the user's answer as incorrect if.
-        - It does not match the correct answer. 
-        - It contains '?'.
-    * Correct: Classify the user's answer as correct if.
-        - It matches the correct answer.
-        - It contains all the correct answers for all players.  
-        - It must contain the complete correct answer. 
+Claim:
+{claimInstruction}
+{{claimAnswer}}
 ";
         }
         private static string BuildTallyAnswer(Dictionary<string, int> answers)
@@ -278,11 +263,10 @@ Task:
                 }
 
             }
-
+            
             sb.AppendLine($"odd:[{string.Join(",", odd)}]");
             sb.AppendLine($"even:[{string.Join(",", even)}]");
-            sb.AppendLine("\nThe information to determine if a player is odd or even is not present.\n");
-
+           
             return sb.ToString();
         }
     }

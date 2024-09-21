@@ -12,7 +12,7 @@ namespace AgentBenchmark
 {
     public class ChocolateTeamGameEngine
     {
-        public static async Task<(string BenchmarkName, string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult)> RunBenchmark(Dictionary<string, int> secretValues, string model, string checkModel, HttpClient httpClient, RequestOptions? requestOptions, (string GameName, string GamePrompt, string CheckAnswerPrompt) game, (string SelectorName, LlmSelectSpeakerAgentConfig Config) selector, (string AgentName, string TeamLeadSystemPrompt, string TeamMemberSystemPrompt) agent)
+        public static async Task<(string BenchmarkName, string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult)> RunBenchmark(Dictionary<string, int> secretValues, string model, HttpClient httpClient, RequestOptions requestOptions, (string GameName, string GamePrompt, string CheckAnswerPrompt) game, (string SelectorName, LlmSelectSpeakerAgentConfig Config) selector, (string AgentName, string TeamLeadSystemPrompt, string TeamMemberSystemPrompt) agent)
         {
             var benchmarkName = $"{game.GameName}/{selector.SelectorName}/{agent.AgentName}";
             Console.WriteLine($"Benchmark: {model}/{benchmarkName}");
@@ -25,11 +25,11 @@ namespace AgentBenchmark
                 InitialPromptMessage: game.GamePrompt,
                 SelectSpeakerAgentConfig: selector.Config
             );
-            var result = await ChocolateTeamsGameEngine(model, checkModel, httpClient, numberTeamConfig, requestOptions);
+            var result = await ChocolateTeamsGameEngine(model, httpClient, numberTeamConfig, requestOptions);
             return (benchmarkName, result.BenchmarkResult, result.BenchmarkConversationResult);
         }
 
-        public static async Task<(string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult)> ChocolateTeamsGameEngine(string model, string checkModel, HttpClient httpClient, ChocolateTeamConfig chocolateTeamConfig, RequestOptions? requestOptions = null)
+        public static async Task<(string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult)> ChocolateTeamsGameEngine(string model, HttpClient httpClient, ChocolateTeamConfig chocolateTeamConfig, RequestOptions requestOptions)
         {
             List<IConversableAgent> agents = [];
             Dictionary<string, List<string>> speakerTransitionsDict = [];
@@ -146,15 +146,15 @@ namespace AgentBenchmark
 
             if (!isFail)
             {
-                var checkAnswer = await IsAnswerCorrectSmallLLM(result[0].Conversation.First().Messages.Last(), chocolateTeamConfig.CheckAnswerPrompt, checkModel, httpClient, requestOptions);
+                var checkAnswer = await IsAnswerCorrectSmallLLM(result[0].Conversation.First().Messages.Last(), chocolateTeamConfig.CheckAnswerPrompt, httpClient, requestOptions);
                 if (checkAnswer.CheckConversationResult != null)
                 {
-                    benchmarkConversationResult.Add(checkAnswer.CheckConversationResult);
+                    benchmarkConversationResult.AddRange(checkAnswer.CheckConversationResult);
                 }
 
                 if (!checkAnswer.IsCorrect)
                 {
-                    failReason = AgentBenchmarkConventions.BenchmarkReasons.FailNotCorrect;
+                    failReason = AgentBenchmarkConventions.BenchmarkReasons.FailIncorrect;
                     isFail = true;
 
                     // identify a reason it failed to get the correct answer
@@ -187,23 +187,26 @@ namespace AgentBenchmark
             }
         }
 
-        private static async Task<(bool IsCorrect, ConversationResult? CheckConversationResult)> IsAnswerCorrect(BAIsic.Interlocutor.Message numbersAnswer, string checkAnswerPrompt, string model, HttpClient httpClient, RequestOptions? requestOptions = null)
+        private static async Task<(bool IsCorrect, ConversationResult? CheckConversationResult)> IsAnswerCorrect(string numbersAnswer, string checkAnswerPrompt, HttpClient httpClient, RequestOptions? requestOptions = null)
         {
-            var initiatorAgent = new Agent("feeder")
-                .AddStringLiteralGenerateReply("Respond with only the classification");
+            var model = "bespoke-minicheck:7b-fp16";
 
-            var llmAgent = new Agent("llm", checkAnswerPrompt)
-                .AddOllamaGenerateReply(model, httpClient, requestOptions);
+            var initiatorAgent = new Agent("feeder");
+
+            var llmAgent = new Agent("llm")
+                .AddOllamaGenerateReply(model, httpClient, requestOptions ?? new RequestOptions());
+
+            BAIsic.Interlocutor.Message claimCheck = new(AgentConsts.Roles.User, checkAnswerPrompt.Replace("{claimAnswer}", numbersAnswer));
 
             var conversation = new DialogueConversation();
-            var conversationResult = await conversation.InitiateChat(initiatorAgent, numbersAnswer, llmAgent, maximumTurnCount: 2);
+            var conversationResult = await conversation.InitiateChat(initiatorAgent, claimCheck, llmAgent, maximumTurnCount: 1);
 
-            if (conversationResult.Conversation.Last().Messages.Last().Text.Contains("incorrect", StringComparison.OrdinalIgnoreCase))
+            if (conversationResult.Conversation.Last().Messages.Last().Text.Contains("no", StringComparison.OrdinalIgnoreCase))
             {
                 // The answer was classified as not correct
                 return (false, conversationResult);
             }
-            else if (conversationResult.Conversation.Last().Messages.Last().Text.Contains("correct", StringComparison.OrdinalIgnoreCase))
+            else if (conversationResult.Conversation.Last().Messages.Last().Text.Contains("yes", StringComparison.OrdinalIgnoreCase))
             {   // The answer was classified as correct
                 return (true, conversationResult);
             }
@@ -216,18 +219,30 @@ namespace AgentBenchmark
 
         }
 
-        private static async Task<(bool IsCorrect, ConversationResult? CheckConversationResult)> IsAnswerCorrectSmallLLM(BAIsic.Interlocutor.Message numbersAnswer, string checkAnswerPrompt, string model, HttpClient httpClient, RequestOptions? requestOptions = null)
+        private static async Task<(bool IsCorrect, List<ConversationResult>? CheckConversationResult)> IsAnswerCorrectSmallLLM(BAIsic.Interlocutor.Message numbersAnswer, string checkAnswerPrompt, HttpClient httpClient, RequestOptions? requestOptions = null)
         {
             // get answers (in format for the check answers)
-            var answerText = await GetAnswer(numbersAnswer, model, httpClient, requestOptions);  
-            BAIsic.Interlocutor.Message answer = new(AgentConsts.Roles.User, answerText);
+            var answer = await GetAnswer(numbersAnswer, httpClient, requestOptions);  
 
             // check the answer
-            return await IsAnswerCorrect(answer, checkAnswerPrompt, model, httpClient!, requestOptions);
+            var checkAnswer = await IsAnswerCorrect(answer.AnswerText, checkAnswerPrompt, httpClient!, requestOptions);
+
+            List<ConversationResult> conversationResult = new List<ConversationResult>();
+            if (answer.ConversationResult != null)
+            {
+                conversationResult.Add(answer.ConversationResult);
+            }
+            if (checkAnswer.CheckConversationResult != null)
+            {
+                conversationResult.Add(checkAnswer.CheckConversationResult);
+            }
+
+            return (checkAnswer.IsCorrect, conversationResult);
         }
 
-        private static async Task<string> GetAnswer(BAIsic.Interlocutor.Message numbersAnswer, string model, HttpClient httpClient, RequestOptions? requestOptions = null)
+        private static async Task<(string AnswerText, ConversationResult? ConversationResult)> GetAnswer(BAIsic.Interlocutor.Message numbersAnswer, HttpClient httpClient, RequestOptions? requestOptions = null)
         {
+            var model = "llama3:8b-instruct-fp16";
             var initiatorAgent = new Agent("feeder");
             var getAnswerPrompt = @"The user has provided a JSON-formatted answer.
 Output only the JSON provided by the user without making any changes or assumptions.
@@ -240,11 +255,11 @@ Without a greeting or additional information.";
             var conversation = new DialogueConversation();
             var conversationResult = await conversation.InitiateChat(initiatorAgent, numbersAnswer, llmAgent, maximumTurnCount: 1);
 
-            return conversationResult.Conversation.Last().Messages.Last().Text;
+            return (conversationResult.Conversation.Last().Messages.Last().Text, conversationResult);
 
         }
 
-        private static async Task<(bool IsImpersonating, List<ConversationResult>? CheckConversationResults)> IsImpersonating(List<ConversationResult> groupChatConversations, string model, HttpClient httpClient, RequestOptions? requestOptions = null)
+        private static async Task<(bool IsImpersonating, List<ConversationResult>? CheckConversationResults)> IsImpersonating(List<ConversationResult> groupChatConversations, string model, HttpClient httpClient, RequestOptions requestOptions)
         {
             string[] teams = ["A", "B", "C"];
             var teamCount = 3;
