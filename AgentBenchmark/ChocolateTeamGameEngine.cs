@@ -249,8 +249,12 @@ Output only the JSON provided by the user without making any changes or assumpti
 
 Without a greeting or additional information.";
 
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+            requestOptions.NumCtx = 128;
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
             var llmAgent = new Agent("llm", getAnswerPrompt)
                 .AddOllamaGenerateReply(model, httpClient, new OllamaOptions() {  RequestOptions = requestOptions, ResponseFormat = "json"});
+            requestOptions.NumCtx = 2048;
 
             var conversation = new DialogueConversation();
             var conversationResult = await conversation.InitiateChat(initiatorAgent, numbersAnswer, llmAgent, maximumTurnCount: 1);

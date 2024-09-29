@@ -10,59 +10,31 @@ using System.Text.Json;
 Console.WriteLine("Agent Benchmark!");
 const int TimeoutMinutes = 30;
 
-string[] models = [
-    //"llama3:8b-instruct-q2_K",
-    "llama3:8b-instruct-q4_0",
-    "llama3:8b-instruct-q6_K",
-    "llama3:8b-instruct-q8_0",
-    "llama3:8b-instruct-fp16",
+string[] models = File.ReadAllLines("models.txt")
+                       .Select(line => line.Trim())
+                       .Where(line => !line.TrimStart().StartsWith("//") && !string.IsNullOrWhiteSpace(line))
+                       .ToArray();
 
-    //"llama3.1:8b-instruct-q2_K",
-    "llama3.1:8b-instruct-q4_0",
-    "llama3.1:8b-instruct-q6_K",
-    "llama3.1:8b-instruct-q8_0",
-    "llama3.1:8b-instruct-fp16",
+string[] games = File.ReadAllLines("games.txt")
+                      .Select(line => line.Trim().ToLower())
+                      .Where(line => !line.TrimStart().StartsWith("//") && !string.IsNullOrWhiteSpace(line))
+                      .ToArray();
 
-    //"phi3:3.8b-mini-4k-instruct-fp16",
-    //"phi3:14b-medium-4k-instruct-fp16",
-    //"phi3.5:3.8b-mini-instruct-fp16",m
-
-    //"mistral:7b-instruct-v0.3-fp16",
-
-    //"llama3:70b-instruct-q2_K",
-    //"llama3:70b-instruct-q4_0",
-    //"llama3:70b-instruct-q6_K",
-    //"llama3:70b-instruct-q8_0",
-
-    //"llama3.1:70b-instruct-q2_K",
-    //"llama3.1:70b-instruct-q4_0",
-    //"llama3.1:70b-instruct-q6_K",
-    //"llama3.1:70b-instruct-q8_0",
-
-    //"qwen2:0.5b-instruct-fp16",
-    //"qwen2:1.5b-instruct-fp16",
-    //"qwen2:7b-instruct-fp16",
-    //"qwen2-math:1.5b-instruct-fp16",
-    //"qwen2-math:7b-instruct-fp16",
-];
 var httpClient = new HttpClient()
 {
     BaseAddress = new Uri("http://quorra.homelan.binaryward.com:11434"),
     Timeout = TimeSpan.FromMinutes(TimeoutMinutes)
 };
-var requestOptions = new RequestOptions()
-{
-    NumCtx = 2048,
-    Temperature = 0.1f,
-    TopP = 0.1f,
-};
+// random number generator for positive int 
+var random = new Random();
+
 
 Dictionary<string, Dictionary<string, int>> allBenchmarkData = [];
 
 string[] teams = ["A", "B", "C"];
 var teamCount = 3;
 
-int maxRoundCount = 1;
+int maxRoundCount = 10;
 foreach (var model in models)
 {
     Dictionary<string, Dictionary<string, int>> benchmarkData = [];
@@ -70,6 +42,14 @@ foreach (var model in models)
     for (int t = 1; t <= maxRoundCount; t++)
     {
         Console.WriteLine($"Round {t}");
+        int randomPositiveInt = random.Next(1, int.MaxValue);
+        var requestOptions = new RequestOptions()
+        {
+            NumCtx = 2048,
+            Temperature = 0.1f,
+            TopP = 0.1f,
+            Seed = randomPositiveInt,
+        };
         Dictionary<string, int> secretValues = [];
         foreach (var prefix in teams)
         {
@@ -82,21 +62,30 @@ foreach (var model in models)
         }
 
         // Tally
-        await foreach (var reportResult in ChocolateTeamTallyBenchmark.All_Benchmarks(secretValues, model, httpClient, requestOptions))
+        if (games.Contains("tally"))
         {
-            UpdateBenchmarkData(benchmarkData, reportResult, model);
+            await foreach (var reportResult in ChocolateTeamTallyBenchmark.All_Benchmarks(secretValues, model, httpClient, requestOptions))
+            {
+                UpdateBenchmarkData(benchmarkData, reportResult, model, requestOptions);
+            }
         }
-
+        
         // Report
-        await foreach (var reportResult in ChocolateTeamReportBenchmark.All_Benchmarks(secretValues, model, httpClient, requestOptions))
+        if (games.Contains("report"))
         {
-            UpdateBenchmarkData(benchmarkData, reportResult, model);
+            await foreach (var reportResult in ChocolateTeamReportBenchmark.All_Benchmarks(secretValues, model, httpClient, requestOptions))
+            {
+                UpdateBenchmarkData(benchmarkData, reportResult, model, requestOptions);
+            }
         }
 
         // Odd/Even
-        await foreach (var reportResult in ChocolateTeamOddEvenBenchmark.All_Benchmarks(secretValues, model, httpClient, requestOptions))
+        if (games.Contains("oddeven"))
         {
-            UpdateBenchmarkData(benchmarkData, reportResult, model);
+            await foreach (var reportResult in ChocolateTeamOddEvenBenchmark.All_Benchmarks(secretValues, model, httpClient, requestOptions))
+            {
+                UpdateBenchmarkData(benchmarkData, reportResult, model, requestOptions);
+            }
         }
 
         Console.WriteLine(WriteStatus(benchmarkData, maxRoundCount));
@@ -114,7 +103,7 @@ Console.WriteLine(benchmarkResults);
 SaveTxtResults(benchmarkResults);
 
 
-static void UpdateBenchmarkData(Dictionary<string, Dictionary<string, int>> benchmarkData, (string BenchmarkName, string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult) result, string model)
+static void UpdateBenchmarkData(Dictionary<string, Dictionary<string, int>> benchmarkData, (string BenchmarkName, string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult) result, string model, RequestOptions requestOptions)
 {
     var benchmarkName = $"{model}/{result.BenchmarkName}";
     if (benchmarkData.TryGetValue(benchmarkName, out Dictionary<string, int>? testCounts))
@@ -136,7 +125,7 @@ static void UpdateBenchmarkData(Dictionary<string, Dictionary<string, int>> benc
         };
     }
 
-    WriteBenchmarkConversation(benchmarkName, result.BenchmarkResult, result.BenchmarkConversationResult);
+    WriteBenchmarkConversation(benchmarkName, result.BenchmarkResult, model, result.BenchmarkConversationResult, requestOptions);
 }
 
 static string DataDirectory()
@@ -150,11 +139,11 @@ static string DataDirectory()
     return dataDirectory;
 }
 
-    static void WriteBenchmarkConversation(string benchmarkName, string benchmarkResult, List<ConversationResult> benchmarkConversationResult)
+static void WriteBenchmarkConversation(string benchmarkName, string benchmarkResult, string model, List<ConversationResult> benchmarkConversationResult, RequestOptions requestOptions)
 {
     var benchmarkFileName = $"{DataDirectory()}/{benchmarkName.Replace("/", "_").Replace(":", "_")}.json";
     bool fileExists = File.Exists(benchmarkFileName);
-    var benchmarkConversationData = new BenchmarkConversationData(benchmarkName, benchmarkResult, benchmarkConversationResult.Select(x => new BenchmarkConversationResult(x.TurnCount, x.Conversation.Select(y => new BenchmarkConversationHistory(y.Agent.Name, y.Messages)).ToImmutableList())).ToImmutableList());
+    var benchmarkConversationData = new BenchmarkConversationData(benchmarkName, benchmarkResult, model, requestOptions, benchmarkConversationResult.Select(x => new BenchmarkConversationResult(x.TurnCount, x.Conversation.Select(y => new BenchmarkConversationHistory(y.Agent.Name, y.Messages)).ToImmutableList())).ToImmutableList());
 
     using (StreamWriter writer = new StreamWriter(benchmarkFileName, append: fileExists))
     {
@@ -185,7 +174,7 @@ static void SaveBenchmark(Dictionary<string, Dictionary<string, int>> testResult
     string filePath = $"{DataDirectory()}/agentbenchmark.json";
     bool fileExists = File.Exists(filePath);
 
-    Dictionary<string, Dictionary<string, int>>? fileData=null;
+    Dictionary<string, Dictionary<string, int>>? fileData = null;
 
     if (fileExists)
     {
@@ -231,7 +220,7 @@ static void SaveBenchmarkCsv(Dictionary<string, Dictionary<string, int>> testRes
 {
     // save testResults to csv
     string filePath = $"{DataDirectory()}/agentbenchmark.csv";
-    
+
     var keys = new List<string> {
         AgentBenchmarkConventions.BenchmarkReasons.Pass,
         AgentBenchmarkConventions.BenchmarkReasons.FailIncorrect,
@@ -262,7 +251,7 @@ static void SaveBenchmarkCsv(Dictionary<string, Dictionary<string, int>> testRes
                     if (key == AgentBenchmarkConventions.BenchmarkReasons.Pass)
                     {
                         pass = value;
-                    }    
+                    }
                 }
                 else
                 {
