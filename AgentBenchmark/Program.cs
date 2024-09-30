@@ -20,6 +20,8 @@ string[] games = File.ReadAllLines("games.txt")
                       .Where(line => !line.TrimStart().StartsWith("//") && !string.IsNullOrWhiteSpace(line))
                       .ToArray();
 
+string rounds = File.ReadAllText("rounds.txt").Trim();
+
 var httpClient = new HttpClient()
 {
     BaseAddress = new Uri("http://quorra.homelan.binaryward.com:11434"),
@@ -34,7 +36,7 @@ Dictionary<string, Dictionary<string, int>> allBenchmarkData = [];
 string[] teams = ["A", "B", "C"];
 var teamCount = 3;
 
-int maxRoundCount = 10;
+int maxRoundCount = int.Parse(rounds);
 foreach (var model in models)
 {
     Dictionary<string, Dictionary<string, int>> benchmarkData = [];
