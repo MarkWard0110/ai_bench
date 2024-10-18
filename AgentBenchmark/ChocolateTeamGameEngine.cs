@@ -25,8 +25,25 @@ namespace AgentBenchmark
                 InitialPromptMessage: game.GamePrompt,
                 SelectSpeakerAgentConfig: selector.Config
             );
-            var result = await ChocolateTeamsGameEngine(model, httpClient, numberTeamConfig, requestOptions);
-            return (benchmarkName, result.BenchmarkResult, result.BenchmarkConversationResult);
+            int attempt = 0;
+            string bencharkResult = string.Empty;
+            while (attempt < 3)
+            {
+                attempt++;
+                try
+                {
+                    var result = await ChocolateTeamsGameEngine(model, httpClient, numberTeamConfig, requestOptions);
+                    return (benchmarkName, result.BenchmarkResult, result.BenchmarkConversationResult);
+                }
+                catch (Exception ex)
+                {
+                    bencharkResult = $"Attempt {attempt} failed: {ex.Message}";
+                    Console.WriteLine(bencharkResult);
+                    await Task.Delay(1000);
+                }
+            }
+           
+            return (benchmarkName, bencharkResult, []);
         }
 
         public static async Task<(string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult)> ChocolateTeamsGameEngine(string model, HttpClient httpClient, ChocolateTeamConfig chocolateTeamConfig, RequestOptions requestOptions)
@@ -242,7 +259,7 @@ namespace AgentBenchmark
 
         private static async Task<(string AnswerText, ConversationResult? ConversationResult)> GetAnswer(BAIsic.Interlocutor.Message numbersAnswer, HttpClient httpClient, RequestOptions? requestOptions = null)
         {
-            var model = "llama3:8b-instruct-fp16";
+            var model = "llama3.1:8b-instruct-q8_0";
             var initiatorAgent = new Agent("feeder");
             var getAnswerPrompt = @"The user has provided a JSON-formatted answer.
 Output only the JSON provided by the user without making any changes or assumptions.

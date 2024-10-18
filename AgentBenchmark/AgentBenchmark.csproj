@@ -13,4 +13,16 @@
     <ProjectReference Include="..\bAIsic\src\BAIsic.LlmApi.Ollama\BAIsic.LlmApi.Ollama.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="games.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="models.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="rounds.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

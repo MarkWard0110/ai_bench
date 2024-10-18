@@ -1,0 +1,36 @@
+  //llama3:8b-instruct-q2_K
+  //llama3:8b-instruct-q4_0
+  //llama3:8b-instruct-q6_K
+  //llama3:8b-instruct-q8_0
+  //llama3:8b-instruct-fp16
+
+  //llama3.1:8b-instruct-q2_K
+  llama3.1:8b-instruct-q4_0
+  llama3.1:8b-instruct-q6_K
+  llama3.1:8b-instruct-q8_0
+  //llama3.1:8b-instruct-fp16
+
+  //llama3.2:1b-instruct-fp16
+  //llama3.2:3b-instruct-fp16
+
+  //phi3:3.8b-mini-4k-instruct-fp16
+  //phi3:14b-medium-4k-instruct-fp16
+  //phi3.5:3.8b-mini-instruct-fp16m
+
+  //mistral:7b-instruct-v0.3-fp16
+
+  //llama3:70b-instruct-q2_K
+  //llama3:70b-instruct-q4_0
+  //llama3:70b-instruct-q6_K
+  //llama3:70b-instruct-q8_0
+
+  //llama3.1:70b-instruct-q2_K
+  //llama3.1:70b-instruct-q4_0
+  //llama3.1:70b-instruct-q6_K
+  //llama3.1:70b-instruct-q8_0
+
+  //qwen2:0.5b-instruct-fp16
+  //qwen2:1.5b-instruct-fp16
+  //qwen2:7b-instruct-fp16
+  //qwen2-math:1.5b-instruct-fp16
+  //qwen2-math:7b-instruct-fp16
