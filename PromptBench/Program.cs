@@ -7,6 +7,12 @@ var models = await ollamaBenchmark.GetModels();
 var modelIgnoreList = new string[]{
     "nomic-embed-text:137m-v1.5-fp16", // does not support chat - embedding model
     "mxbai-embed-large:335m-v1-fp16", // embedding model
+    "snowflake-arctic-embed:335m-l-fp16",
+    "zw66/llama3-chat-8.0bpw:latest",
+    "unclemusclez/jina-embeddings-v2-base-code:f16",
+    "jina/jina-embeddings-v2-base-en:latest",
+    "bge-large:335m-en-v1.5-fp16",
+    "all-minilm:33m-l12-v2-fp16",
 };
 
 models = models.Where(x => !modelIgnoreList.Contains(x)).ToArray();
