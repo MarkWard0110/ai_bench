@@ -130,7 +130,7 @@ namespace AgentBenchmark
             speakerTransitionsDict[initiatorAgent.Name] = ["A0"];
 
             int maxTurnCount = 20;
-            int minimumTurnCount = 12;
+            int minimumTurnCount = 11; // 11 is when c2 terminates, 12 is when c2 calls c0 and then c0 terminates.
             var groupConversation = new GroupConversation(agents, agentSelectSpeaker.SelectSpeakerAsync, allowedTransitions: speakerTransitionsDict, maxTurnCount: maxTurnCount, terminationHandler: Terminate);
 
             var initialMessage = new BAIsic.Interlocutor.Message(AgentConsts.Roles.User, chocolateTeamConfig.InitialPromptMessage);

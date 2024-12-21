@@ -29,6 +29,10 @@
   //llama3.1:70b-instruct-q6_K
   //llama3.1:70b-instruct-q8_0
 
+  llama3.3:70b-instruct-q4_0
+  llama3.3:70b-instruct-q6_K
+  llama3.3:70b-instruct-q8_0
+
   //qwen2:0.5b-instruct-fp16
   //qwen2:1.5b-instruct-fp16
   //qwen2:7b-instruct-fp16
