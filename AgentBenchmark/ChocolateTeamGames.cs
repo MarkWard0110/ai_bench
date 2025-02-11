@@ -125,6 +125,112 @@ NEXT: B1
 ", expectedAnswer);
         }
 
+        public static (string GameName, string GamePrompt, string CheckAnswerPrompt) TallyV3(Dictionary<string, int> secretValues)
+        {
+            var expectedAnswer = BuildCheckAnswerPrompt(BuildTallyAnswer(secretValues));
+
+            return ($"{RootGameName}/TallyV3", @"Using the following JSON format
+
+{
+A0: ?,
+A1: ?,
+A2: ?,
+TeamATotal: ?,
+B0: ?,
+B1: ?,
+B2: ?,
+TeamBTotal: ?,
+C0: ?,
+C1: ?,
+C2: ?,
+TeamCTotal: ?
+}
+
+Each player, including team leaders, will update the JSON format and specify the next player.
+
+1. ""Please copy the entire list from the previous response, including all team members' chocolate counts.""
+2. ""Remember to preserve the existing information from previous responses. Only update the list with new or changed information.""
+
+If the NEXT player is not you, you will assume that you were picked instead.  Do not impersonate another player.
+
+The termination must include the complete JSON format with all the player's chocolate counts and team tally.
+
+
+An example of a team member's answer:
+I'm A2, a member of Team A.  I have 2 chocolates.
+{
+A0: 3
+A1: 5
+A2: 2
+TeamATotal: 10
+B0: ?
+B1: ?
+B2: ?
+TeamBTotal: ?
+C0: ?
+C1: ?
+C2: ?
+TeamCTotal: ?
+}
+NEXT: A0
+
+An example of a team leader's answer:
+I'm B0, a leader of Team B.  I have 1 chocolate.
+{
+A0: 3
+A1: 5
+A2: 2
+TeamATotal: 10
+B0: 1
+B1: ?
+B2: ?
+TeamBTotal: 1
+C0: ?
+C1: ?
+C2: ?
+TeamCTotal: ?
+}
+NEXT: B1
+
+An example of a team member's answer:
+I'm B1, a member of Team B.  I have 2 chocolates.
+{
+A0: 3
+A1: 5
+A2: 2
+TeamATotal: 10
+B0: 1
+B1: 2
+B2: ?
+TeamBTotal: 3
+C0: ?
+C1: ?
+C2: ?
+TeamCTotal: ?
+}
+NEXT: B2
+
+An example of a team member's answer:
+I'm C1, a member of Team C.  I have 3 chocolates.
+{
+A0: 3
+A1: 5
+A2: 2
+TeamATotal: 10
+B0: 1
+B1: 2
+B2: 1
+TeamBTotal: 4
+C0: 1
+C1: 3
+C2: ?
+TeamCTotal: 4
+}
+NEXT: C2
+
+", expectedAnswer);
+        }
+
         public static (string GameName, string GamePrompt, string CheckAnswerPrompt) ReportV1(Dictionary<string, int> secretValues)
         {
             var expectedAnswer = BuildCheckAnswerPrompt(BuildReportAnswer(secretValues));
@@ -173,6 +279,66 @@ B2:?
 C0:?
 C1:?
 C2:?
+}
+NEXT: B1
+", expectedAnswer);
+        }
+
+        public static (string GameName, string GamePrompt, string CheckAnswerPrompt) ReportV2(Dictionary<string, int> secretValues)
+        {
+            var expectedAnswer = BuildCheckAnswerPrompt(BuildReportAnswer(secretValues));
+
+            return ($"{RootGameName}/ReportV2", @"
+Each player, including team leaders, will update the JSON format and specify the next player.
+
+1. ""Please copy the entire list from the previous response, including all team members' chocolate counts.""
+2. ""Remember to preserve the existing information from previous responses. Only update the list with new or changed information.""
+
+If the NEXT player is not you, you will assume that you were picked instead.  Do not impersonate another player.
+
+The termination must include the complete JSON format with all the player's chocolate counts and team tally.
+
+{
+A0: ?
+A1: ?
+A2: ?
+B0: ?
+B1: ?
+B2: ?
+C0: ?
+C1: ?
+C2: ?
+}
+
+The termination must include the JSON format with all the player's count.
+
+An example of team member's answer:
+I'm A2, a member of Team A.  I have 2 chocolates.
+{
+A0: 3
+A1: 5
+A2: 2
+B0: ?
+B1: ?
+B2: ?
+C0: ?
+C1: ?
+C2: ?
+}
+NEXT: A0
+
+An example of team leader's answer:
+I'm B0, a leader of Team B.  I have 1 chocolate.
+{
+A0: 3
+A1: 5
+A2: 2
+B0: 1
+B1: ?
+B2: ?
+C0: ?
+C1: ?
+C2: ?
 }
 NEXT: B1
 ", expectedAnswer);

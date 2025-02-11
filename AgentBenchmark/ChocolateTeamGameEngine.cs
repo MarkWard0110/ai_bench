@@ -6,16 +6,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace AgentBenchmark
 {
     public class ChocolateTeamGameEngine
     {
+        const string LabelSeperator = " | ";
+
         public static async Task<(string BenchmarkName, string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult)> RunBenchmark(Dictionary<string, int> secretValues, string model, HttpClient httpClient, RequestOptions requestOptions, (string GameName, string GamePrompt, string CheckAnswerPrompt) game, (string SelectorName, LlmSelectSpeakerAgentConfig Config) selector, (string AgentName, string TeamLeadSystemPrompt, string TeamMemberSystemPrompt) agent)
         {
-            var benchmarkName = $"{game.GameName}/{selector.SelectorName}/{agent.AgentName}";
-            Console.WriteLine($"Benchmark: {model}/{benchmarkName}");
+            string benchmarkName = GenerateBenchmarkName(game, selector, agent);
+            Console.WriteLine($"Benchmark: {GenerateModelBenchmarkName(model, benchmarkName)}");
 
             var numberTeamConfig = new ChocolateTeamConfig(
                 TeamLeadSystemPrompt: agent.TeamLeadSystemPrompt,
@@ -42,8 +45,25 @@ namespace AgentBenchmark
                     await Task.Delay(1000);
                 }
             }
-           
+
             return (benchmarkName, bencharkResult, []);
+        }
+
+        public static bool SkipBenchmark(string[] skipBenchmarks, string model, (string GameName, string GamePrompt, string CheckAnswerPrompt) game, (string SelectorName, LlmSelectSpeakerAgentConfig Config) selector, (string AgentName, string TeamLeadSystemPrompt, string TeamMemberSystemPrompt) agent)
+        {
+            var benchmarkName = GenerateBenchmarkName(game, selector, agent);
+            var modelBenchmarkName = GenerateModelBenchmarkName(model, benchmarkName);
+            return skipBenchmarks.Contains(modelBenchmarkName.ToLower());
+        }
+
+        public static string GenerateModelBenchmarkName(string model, string benchmarkName)
+        {
+            return $"{model}{LabelSeperator}{benchmarkName}";
+        }
+
+        public static string GenerateBenchmarkName((string GameName, string GamePrompt, string CheckAnswerPrompt) game, (string SelectorName, LlmSelectSpeakerAgentConfig Config) selector, (string AgentName, string TeamLeadSystemPrompt, string TeamMemberSystemPrompt) agent)
+        {
+            return $"{game.GameName}/{selector.SelectorName}/{agent.AgentName}";
         }
 
         public static async Task<(string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult)> ChocolateTeamsGameEngine(string model, HttpClient httpClient, ChocolateTeamConfig chocolateTeamConfig, RequestOptions requestOptions)
@@ -73,11 +93,29 @@ namespace AgentBenchmark
                     systemMessage = systemMessage.Replace("{teamMemberList}", playerList);
                     systemMessage = systemMessage.Replace("{teamName}", prefix);
 
-                    agents.Add(new ConversableAgent(
+                    var agent = new ConversableAgent(
                             name: nodeId,
                             systemPrompt: systemMessage,
                             description: systemMessage
-                        ).AddOllamaGenerateReply(model, httpClient, requestOptions));
+                        ).AddOllamaGenerateReply(model, httpClient, requestOptions);
+
+                    var receiveNextFilter = new ReceiveNextFilter();
+                    agent.PrepareReceiveHandlers.Add(receiveNextFilter.FilterNext);
+
+                    agent.PrepareSendHandlers.Add((BAIsic.Interlocutor.Message? message) => {
+
+                        if (message == null)
+                        {
+                            return Task.FromResult(message);
+                        }
+
+                        string pattern = @"NEXT:\s*\S+";
+                        string result = Regex.Replace(message.Text, pattern, "", RegexOptions.IgnoreCase);
+                        var modifiedMessage = message with { Text = result };
+
+                        return Task.FromResult<BAIsic.Interlocutor.Message?>(modifiedMessage);
+                    });
+                    agents.Add(agent);
 
                     speakerTransitionsDict[agents.Last().Name] = [];
                 }
@@ -118,9 +156,14 @@ namespace AgentBenchmark
 
             var agentSelectSpeaker = new LlmSpeakerSelector(selectSpeakerAgent, 30);
 
-
+            
             static Task<bool> Terminate(bool isInitialMessage, IAgent agent, BAIsic.Interlocutor.Message message)
             {
+                if (isInitialMessage)
+                {
+                    return Task.FromResult(false);
+                }
+
                 return Task.FromResult(message.Text.Contains("TERMINATE", StringComparison.OrdinalIgnoreCase));
             }
 
@@ -209,9 +252,17 @@ namespace AgentBenchmark
             var model = "bespoke-minicheck:7b-fp16";
 
             var initiatorAgent = new Agent("feeder");
+            var bespokeRequestOptions = new BAIsic.LlmApi.Ollama.RequestOptions()
+            {
+                NumCtx = 2048,
+                NumPredict = 512,
+                Temperature = 0.1f,
+                TopP = 0.1f,
+                Seed = requestOptions?.Seed ?? null,
+            };
 
             var llmAgent = new Agent("llm")
-                .AddOllamaGenerateReply(model, httpClient, requestOptions ?? new RequestOptions());
+                .AddOllamaGenerateReply(model, httpClient, bespokeRequestOptions);
 
             BAIsic.Interlocutor.Message claimCheck = new(AgentConsts.Roles.User, checkAnswerPrompt.Replace("{claimAnswer}", numbersAnswer));
 
@@ -259,25 +310,31 @@ namespace AgentBenchmark
 
         private static async Task<(string AnswerText, ConversationResult? ConversationResult)> GetAnswer(BAIsic.Interlocutor.Message numbersAnswer, HttpClient httpClient, RequestOptions? requestOptions = null)
         {
-            var model = "llama3.1:8b-instruct-q8_0";
-            var initiatorAgent = new Agent("feeder");
+            var model = "mistral-small:24b-instruct-2501-q4_K_M";
+            var initiatorAgent = new Agent("feeder").AddStringLiteralGenerateReply("Format as JSON.");
+
             var getAnswerPrompt = @"The user has provided a JSON-formatted answer.
 Output only the JSON provided by the user without making any changes or assumptions.
 
 Without a greeting or additional information.";
 
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-            requestOptions.NumCtx = 128;
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
+            var answerRequestOptions = new BAIsic.LlmApi.Ollama.RequestOptions()
+            {
+                NumCtx = 2048,
+                NumPredict = 512,
+                Temperature = 0.1f,
+                TopP = 0.1f,
+                Seed = requestOptions?.Seed ?? null,
+            };
+
             var llmAgent = new Agent("llm", getAnswerPrompt)
-                .AddOllamaGenerateReply(model, httpClient, new OllamaOptions() {  RequestOptions = requestOptions, ResponseFormat = "json"});
-            requestOptions.NumCtx = 2048;
+                .AddOllamaGenerateReply(model, httpClient, new OllamaOptions() {  RequestOptions = answerRequestOptions, ResponseFormat = "json"});
+
 
             var conversation = new DialogueConversation();
-            var conversationResult = await conversation.InitiateChat(initiatorAgent, numbersAnswer, llmAgent, maximumTurnCount: 1);
+            var conversationResult = await conversation.InitiateChat(initiatorAgent, numbersAnswer, llmAgent, maximumTurnCount: 2);
 
             return (conversationResult.Conversation.Last().Messages.Last().Text, conversationResult);
-
         }
 
         private static async Task<(bool IsImpersonating, List<ConversationResult>? CheckConversationResults)> IsImpersonating(List<ConversationResult> groupChatConversations, string model, HttpClient httpClient, RequestOptions requestOptions)

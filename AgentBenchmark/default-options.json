@@ -1,0 +1,7 @@
+﻿{
+  "num_ctx": 2048,
+  "num_predict": 512,
+  "temperature": 0,
+  "top_p": 0,
+  "top_k": 1
+}

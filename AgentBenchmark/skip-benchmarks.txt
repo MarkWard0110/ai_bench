@@ -1,0 +1,2 @@
+﻿// example
+// mistral-small:24b-instruct-2501-q4_K_M | ChocolateTeam/TallyV1/bAIsicV1Selector/ChocolateTeamV1.1Agent

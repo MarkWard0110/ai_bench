@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "AgentBenchmark": {
+      "commandName": "Project",
+      "environmentVariables": {
+      }
+    },
+    "AgentBenchmark_Args": {
+      "commandName": "Project",
+      "commandLineArgs": "--label vs"
+    }
+  }
+}
