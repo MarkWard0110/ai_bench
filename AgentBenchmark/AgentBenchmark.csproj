@@ -30,6 +30,9 @@
     <None Update="config\models.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="config\randomset.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="config\rounds.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

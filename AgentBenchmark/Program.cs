@@ -336,34 +336,47 @@ namespace AgentBenchmark
             int maxRoundCount = int.Parse(rounds);
 
             Console.WriteLine($"Data Label: {DataLabel}");
-            foreach (var model in models)
+
+            IEnumerator<int[]>? setIterator = null;
+            bool isRandomMode = false;
+            if (dataMode.Contains("sequence"))
             {
-                Console.WriteLine($"Model: {model}");
-                IEnumerator<int[]>? setIterator = null;
-                bool isRandomMode = false;
-                if (dataMode.Contains("sequence"))
+                setIterator = GenerateSets(9, 1, 5).GetEnumerator();
+            }
+            else if (dataMode.Contains("random"))
+            {
+                isRandomMode = true;
+                setIterator = GenerateRandomSets(9, 1, 5).GetEnumerator();
+            }
+            else if (dataMode.Contains("randomset"))
+            {
+                setIterator = File.ReadAllLines($"config/randomset.csv")
+                    .Select(line => line.Split(',').Select(int.Parse).ToArray())
+                    .GetEnumerator();
+            }
+            else
+            {
+                throw new Exception("Invalid data mode");
+            }
+
+            for (int t = 1; t <= maxRoundCount; t++)
+            {
+                Console.WriteLine($"Round {t}");
+                if (!setIterator.MoveNext())
                 {
-                    setIterator = GenerateSets(9, 1, 5).GetEnumerator();
-                }
-                else if (dataMode.Contains("random"))
-                {
-                    isRandomMode = true;
-                    setIterator = GenerateRandomSets(9, 1, 5).GetEnumerator();
-                }
-                else if (dataMode.Contains("randomset"))
-                {
-                    setIterator = File.ReadAllLines($"config/randomset.csv")
-                        .Select(line => line.Split(',').Select(int.Parse).ToArray())
-                        .GetEnumerator();
-                }
-                else
-                {
-                    throw new Exception("Invalid data mode");
+                    Console.WriteLine("End of data");
+                    break;
                 }
 
-                for (int t = 1; t <= maxRoundCount; t++)
+                var currentSet = setIterator.Current;
+                if (isRandomMode)
                 {
-                    Console.WriteLine($"Round {t}");
+                    SaveRandomSet(currentSet);
+                }
+
+                foreach (var model in models)
+                {
+                    Console.WriteLine($"Model: {model}");
                     int randomPositiveInt = random.Next(1, int.MaxValue);
                     var requestOptions = new RequestOptions()
                     {
@@ -395,17 +408,7 @@ namespace AgentBenchmark
                         VocabOnly = cfgOptions.VocabOnly
                     };
 
-                    if (!setIterator.MoveNext())
-                    {
-                        Console.WriteLine("End of data");
-                        break;
-                    }
 
-                    var currentSet = setIterator.Current;
-                    if (isRandomMode)
-                    {
-                        SaveRandomSet(currentSet);
-                    }
                     Dictionary<string, int> secretValues = [];
                     var playerIndex = 0;
                     foreach (var prefix in teams)
@@ -445,9 +448,11 @@ namespace AgentBenchmark
                         }
                     }
 
-                    Console.WriteLine($"Round {t} done");
-                    Console.WriteLine("");
                 }
+
+
+                Console.WriteLine($"Round {t} done");
+                Console.WriteLine("");
             }
 
             Console.WriteLine("Agent Benchmark complete!");
