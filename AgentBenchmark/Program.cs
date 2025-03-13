@@ -340,14 +340,21 @@ namespace AgentBenchmark
             {
                 Console.WriteLine($"Model: {model}");
                 IEnumerator<int[]>? setIterator = null;
-
+                bool isRandomMode = false;
                 if (dataMode.Contains("sequence"))
                 {
                     setIterator = GenerateSets(9, 1, 5).GetEnumerator();
                 }
                 else if (dataMode.Contains("random"))
                 {
+                    isRandomMode = true;
                     setIterator = GenerateRandomSets(9, 1, 5).GetEnumerator();
+                }
+                else if (dataMode.Contains("randomset"))
+                {
+                    setIterator = File.ReadAllLines($"config/randomset.csv")
+                        .Select(line => line.Split(',').Select(int.Parse).ToArray())
+                        .GetEnumerator();
                 }
                 else
                 {
@@ -388,8 +395,17 @@ namespace AgentBenchmark
                         VocabOnly = cfgOptions.VocabOnly
                     };
 
-                    setIterator.MoveNext();
+                    if (!setIterator.MoveNext())
+                    {
+                        Console.WriteLine("End of data");
+                        break;
+                    }
+
                     var currentSet = setIterator.Current;
+                    if (isRandomMode)
+                    {
+                        SaveRandomSet(currentSet);
+                    }
                     Dictionary<string, int> secretValues = [];
                     var playerIndex = 0;
                     foreach (var prefix in teams)
@@ -437,6 +453,17 @@ namespace AgentBenchmark
             Console.WriteLine("Agent Benchmark complete!");
 
         }
+
+        private static void SaveRandomSet(int[] currentSet)
+        {
+            string filePath = $"{DataDirectory()}/randomset.csv";
+
+            using (StreamWriter writer = new StreamWriter(filePath, append: true))
+            {
+                writer.WriteLine(string.Join(",", currentSet));
+            }
+        }
+
 
         static IEnumerable<int[]> GenerateSets(int arrayLength, int minValue, int maxValue)
         {

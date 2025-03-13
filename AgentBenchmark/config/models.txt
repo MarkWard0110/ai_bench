@@ -3,7 +3,7 @@
 // llama3.1:8b-instruct-q3_K_M
 // llama3.1:8b-instruct-q3_K_L
 // llama3.1:8b-instruct-q4_0
-// llama3.1:8b-instruct-q4_K_M
+llama3.1:8b-instruct-q4_K_M
 // llama3.1:8b-instruct-q6_K
 //llama3.1:8b-instruct-q8_0
 // llama3.1:8b-instruct-fp16
@@ -38,4 +38,4 @@
 //mistral-nemo:12b-instruct-2407-q8_0
 //mistral-nemo:12b-instruct-2407-fp16
 
-mistral-small:24b-instruct-2501-q4_K_M
+//mistral-small:24b-instruct-2501-q4_K_M
