@@ -45,7 +45,7 @@ namespace AgentBenchmark
                   {
                       if (result.Tokens.Count == 0)
                       {
-                          return "default-options.json";
+                          return "config\\default-options.json";
                       }
                       return result.Tokens[0].Value;
                   });
@@ -306,11 +306,11 @@ namespace AgentBenchmark
         static async Task RunBenchmarkSession(int TimeoutMinutes, string optionsCfg)
         {
 
-            string[] models = ReadConfigFile("models.txt");
-            string[] games = ReadConfigFile("games.txt");
-            string rounds = File.ReadAllText("rounds.txt").Trim();
-            string[] dataMode = ReadConfigFile("datamode.txt");
-            string[] skipBenchmarks = ReadConfigFile("skip-benchmarks.txt");
+            string[] models = ReadConfigFile("config\\models.txt");
+            string[] games = ReadConfigFile("config\\games.txt");
+            string rounds = File.ReadAllText("config\\rounds.txt").Trim();
+            string[] dataMode = ReadConfigFile("config\\datamode.txt");
+            string[] skipBenchmarks = ReadConfigFile("config\\skip-benchmarks.txt");
 
             RequestOptions? cfgOptions = JsonSerializer.Deserialize<RequestOptions>(File.ReadAllText(optionsCfg));
             if (cfgOptions == null)

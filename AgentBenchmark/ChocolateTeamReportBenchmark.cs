@@ -16,7 +16,8 @@ namespace AgentBenchmark
             var agents = ChocolateTeamAgents.All;
             List<(string GameName, string GamePrompt, string CheckAnswerPrompt)> games = [
                ChocolateTeamGames.ReportV1(secretValues),
-                ChocolateTeamGames.ReportV2(secretValues)
+                ChocolateTeamGames.ReportV2(secretValues),
+                ChocolateTeamGames.ReportV3(secretValues),
             ];
 
             foreach (var game in games)

@@ -1,7 +1,7 @@
 param(
     [int]$count = 100,
     [string]$label = "default",
-    [string]$optionsCfg = "default-options.json"
+    [string]$optionsCfg = "config\\default-options.json"
 )
 
 for ($i = 1; $i -le $count; $i++) {

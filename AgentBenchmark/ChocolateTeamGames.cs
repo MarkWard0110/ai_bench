@@ -344,6 +344,59 @@ NEXT: B1
 ", expectedAnswer);
         }
 
+        public static (string GameName, string GamePrompt, string CheckAnswerPrompt) ReportV3(Dictionary<string, int> secretValues)
+        {
+            var expectedAnswer = BuildCheckAnswerPrompt(BuildReportAnswer(secretValues));
+
+            return ($"{RootGameName}/ReportV3", @"There are 9 players in this game, split equally into Teams A, B, C. Therefore, each team has 3 players, including the team leader.
+The task is each player must report their chocolate count.  Each team lead must call on another team after they have completed.
+Every player must keep track of all player's chocolate count using a JSON format.  Every player must answer with the JSON format
+{
+A0:?
+A1:?
+A2:?
+B0:?
+B1:?
+B2:?
+C0:?
+C1:?
+C2:?
+}
+
+The termination must include the JSON format with all the player's count.
+
+An example of team member's answer:
+I'm A2, a member of Team A.  I have 2 chocolates.
+{
+A0:3
+A1:5
+A2:2
+B0:?
+B1:?
+B2:?
+C0:?
+C1:?
+C2:?
+}
+NEXT: A0
+
+An example of team leader's answer:
+I'm B0, a leader of Team B.  I have 1 chocolate.
+{
+A0:3
+A1:5
+A2:2
+B0:1
+B1:?
+B2:?
+C0:?
+C1:?
+C2:?
+}
+NEXT: B1
+", expectedAnswer);
+        }
+
         public static (string GameName, string GamePrompt, string CheckAnswerPrompt) OddEvenV1(Dictionary<string, int> secretValues)
         {
             var expectedAnswer = BuildCheckAnswerPrompt(BuildOddEvenAnswer(secretValues), "Odd and even are unordered sets.");

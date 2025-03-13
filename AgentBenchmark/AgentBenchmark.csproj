@@ -18,25 +18,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="datamode.txt">
+    <None Update="config\datamode.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="default-options.json">
+    <None Update="config\default-options.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="games.txt">
+    <None Update="config\games.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="models.txt">
+    <None Update="config\models.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="rounds.txt">
+    <None Update="config\rounds.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="run.ps1">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="skip-benchmarks.txt">
+    <None Update="config\skip-benchmarks.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
