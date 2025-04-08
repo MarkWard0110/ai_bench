@@ -10,6 +10,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
+using System.Diagnostics;
 
 namespace AgentBenchmark
 {
@@ -359,8 +360,12 @@ namespace AgentBenchmark
                 throw new Exception("Invalid data mode");
             }
 
+            Stopwatch allStopWatch = new Stopwatch();
+            allStopWatch.Start();
             for (int t = 1; t <= maxRoundCount; t++)
             {
+                Stopwatch roundStopWatch = new Stopwatch();
+                roundStopWatch.Start();
                 Console.WriteLine($"Round {t}");
                 if (!setIterator.MoveNext())
                 {
@@ -408,7 +413,6 @@ namespace AgentBenchmark
                         VocabOnly = cfgOptions.VocabOnly
                     };
 
-
                     Dictionary<string, int> secretValues = [];
                     var playerIndex = 0;
                     foreach (var prefix in teams)
@@ -421,6 +425,9 @@ namespace AgentBenchmark
                         }
                     }
 
+
+                    Stopwatch modelStopwatch = new Stopwatch();
+                    modelStopwatch.Start();
                     // Tally
                     if (games.Contains("tally"))
                     {
@@ -448,13 +455,24 @@ namespace AgentBenchmark
                         }
                     }
 
+                    modelStopwatch.Stop();                
+                    TimeSpan ts = modelStopwatch.Elapsed;
+
+                    string elapsedTime = $"{ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}.{ts.Milliseconds / 10:00}";
+                    Console.WriteLine($"Model: {model} execution time: {elapsedTime}");
                 }
 
-
-                Console.WriteLine($"Round {t} done");
+                roundStopWatch.Stop();
+                TimeSpan roundElapsedTime = roundStopWatch.Elapsed;
+                string roundElapsed = $"{roundElapsedTime.Hours:00}:{roundElapsedTime.Minutes:00}:{roundElapsedTime.Seconds:00}.{roundElapsedTime.Milliseconds / 10:00}";
+                Console.WriteLine($"Round {t} done.  Execution time: {roundElapsed}");
                 Console.WriteLine("");
             }
 
+            allStopWatch.Stop();
+            TimeSpan allElapsedTime = allStopWatch.Elapsed;
+            string allElapsed = $"{allElapsedTime.Days:00}-{allElapsedTime.Hours:00}:{allElapsedTime.Minutes:00}:{allElapsedTime.Seconds:00}.{allElapsedTime.Milliseconds / 10:00}";
+            Console.WriteLine($"All rounds done.  Execution time: {allElapsed}");
             Console.WriteLine("Agent Benchmark complete!");
 
         }
