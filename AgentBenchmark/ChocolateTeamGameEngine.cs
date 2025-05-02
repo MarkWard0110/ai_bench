@@ -6,8 +6,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
 
 namespace AgentBenchmark
 {
@@ -17,8 +19,8 @@ namespace AgentBenchmark
 
         public static async Task<(string BenchmarkName, string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult)> RunBenchmark(Dictionary<string, int> secretValues, string model, HttpClient httpClient, RequestOptions requestOptions, (string GameName, string GamePrompt, string CheckAnswerPrompt) game, (string SelectorName, LlmSelectSpeakerAgentConfig Config) selector, (string AgentName, string TeamLeadSystemPrompt, string TeamMemberSystemPrompt) agent)
         {
-            string benchmarkName = GenerateBenchmarkName(game, selector, agent);
-            Console.WriteLine($"Benchmark: {GenerateModelBenchmarkName(model, benchmarkName)}");
+            string benchmarkName = GenerateBenchmarkFullName(model, game, selector, agent, requestOptions);
+            Console.WriteLine($"Benchmark: {benchmarkName}");
 
             var numberTeamConfig = new ChocolateTeamConfig(
                 TeamLeadSystemPrompt: agent.TeamLeadSystemPrompt,
@@ -49,11 +51,31 @@ namespace AgentBenchmark
             return (benchmarkName, bencharkResult, []);
         }
 
-        public static bool SkipBenchmark(string[] skipBenchmarks, string model, (string GameName, string GamePrompt, string CheckAnswerPrompt) game, (string SelectorName, LlmSelectSpeakerAgentConfig Config) selector, (string AgentName, string TeamLeadSystemPrompt, string TeamMemberSystemPrompt) agent)
+        public static bool SkipBenchmark(string[] skipBenchmarks, Dictionary<string, Dictionary<string, int>> resumeBenchmarkData, string model, (string GameName, string GamePrompt, string CheckAnswerPrompt) game, (string SelectorName, LlmSelectSpeakerAgentConfig Config) selector, (string AgentName, string TeamLeadSystemPrompt, string TeamMemberSystemPrompt) agent, RequestOptions requestOptions, int currentRoundCount)
         {
             var benchmarkName = GenerateBenchmarkName(game, selector, agent);
             var modelBenchmarkName = GenerateModelBenchmarkName(model, benchmarkName);
-            return skipBenchmarks.Contains(modelBenchmarkName.ToLower());
+            if ( skipBenchmarks.Contains(modelBenchmarkName.ToLower()) )
+            {
+                return true;
+            }
+
+            var benchmarkFullName = GenerateBenchmarkFullName(model, game, selector, agent, requestOptions);
+            if (resumeBenchmarkData != null && resumeBenchmarkData.ContainsKey(benchmarkFullName))
+            {
+                var resumeData = resumeBenchmarkData[benchmarkFullName];
+                if (resumeData.ContainsKey("roundCount"))
+                {
+                    int previousRoundCount = resumeData["roundCount"];
+                    if (previousRoundCount >= currentRoundCount)
+                    {
+                        return true;
+                    }
+                    
+                }
+            }
+
+            return false;
         }
 
         public static string GenerateModelBenchmarkName(string model, string benchmarkName)
@@ -64,6 +86,46 @@ namespace AgentBenchmark
         public static string GenerateBenchmarkName((string GameName, string GamePrompt, string CheckAnswerPrompt) game, (string SelectorName, LlmSelectSpeakerAgentConfig Config) selector, (string AgentName, string TeamLeadSystemPrompt, string TeamMemberSystemPrompt) agent)
         {
             return $"{game.GameName}/{selector.SelectorName}/{agent.AgentName}";
+        }
+        public static string GenerateBenchmarkFullName(string model, (string GameName, string GamePrompt, string CheckAnswerPrompt) game, (string SelectorName, LlmSelectSpeakerAgentConfig Config) selector, (string AgentName, string TeamLeadSystemPrompt, string TeamMemberSystemPrompt) agent, RequestOptions requestOptions)
+        {
+            string optionsId = GetOptionsHashId(requestOptions);
+
+            var benchmarkName = GenerateBenchmarkName(game, selector, agent);
+            var modelBenchmarkName = GenerateModelBenchmarkName(model, benchmarkName);
+
+            return $"{modelBenchmarkName}{LabelSeperator}{optionsId}";
+        }
+
+        private static string GetOptionsHashId(RequestOptions requestOptions)
+        {
+            var hashOptions = new RequestOptions()
+            {
+                MiroStatTau = requestOptions.MiroStatTau,
+                MiroStatEta = requestOptions.MiroStatEta,
+                MiroStat = requestOptions.MiroStat,
+                NumCtx = requestOptions.NumCtx,
+                NumPredict = requestOptions.NumPredict,
+                RepeatLastN = requestOptions.RepeatLastN,
+                RepeatPenalty = requestOptions.RepeatPenalty,
+                Stop = requestOptions.Stop,
+                Temperature = requestOptions.Temperature,
+                TopK = requestOptions.TopK,
+                TopP = requestOptions.TopP,
+            };
+            string jsonOptionsData = JsonSerializer.Serialize(hashOptions, options: new JsonSerializerOptions { WriteIndented = false });
+
+            // Generate SHA256 hash of jsonOptionsData
+            byte[] hashBytes;
+            using (SHA256 sha256 = SHA256.Create())
+            {
+                hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(jsonOptionsData));
+            }
+            string base64Hash = Convert.ToBase64String(hashBytes);
+
+            // Create a short ID from the hash
+            string shortId = base64Hash.Substring(0, 8);
+            return shortId;
         }
 
         public static async Task<(string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult)> ChocolateTeamsGameEngine(string model, HttpClient httpClient, ChocolateTeamConfig chocolateTeamConfig, RequestOptions requestOptions)

@@ -9,7 +9,6 @@ using System.Text.Json;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
 using System.Diagnostics;
 
 namespace AgentBenchmark
@@ -68,9 +67,8 @@ namespace AgentBenchmark
 
         static void UpdateBenchmarkData((string BenchmarkName, string BenchmarkResult, List<ConversationResult> BenchmarkConversationResult) result, string model, RequestOptions requestOptions)
         {
-            string optionsId = GetOptionsHashId(requestOptions);
 
-            var benchmarkName = $"{model}{LabelSeperator}{result.BenchmarkName}{LabelSeperator}{optionsId}";
+            var benchmarkName = result.BenchmarkName;
             Dictionary<string, Dictionary<string, int>> benchmarkData = new();
             benchmarkData[benchmarkName] = new Dictionary<string, int>
             {
@@ -79,37 +77,6 @@ namespace AgentBenchmark
 
             WriteBenchmarkConversation(benchmarkName, result.BenchmarkResult, model, result.BenchmarkConversationResult, requestOptions);
             SaveBenchmark(benchmarkData);
-        }
-
-        private static string GetOptionsHashId(RequestOptions requestOptions)
-        {
-            var hashOptions = new RequestOptions()
-            {
-                MiroStatTau = requestOptions.MiroStatTau,
-                MiroStatEta = requestOptions.MiroStatEta,
-                MiroStat = requestOptions.MiroStat,
-                NumCtx = requestOptions.NumCtx,
-                NumPredict = requestOptions.NumPredict,
-                RepeatLastN = requestOptions.RepeatLastN,
-                RepeatPenalty = requestOptions.RepeatPenalty,
-                Stop = requestOptions.Stop,
-                Temperature = requestOptions.Temperature,
-                TopK = requestOptions.TopK,
-                TopP = requestOptions.TopP,
-            };
-            string jsonOptionsData = JsonSerializer.Serialize(hashOptions, options: new JsonSerializerOptions { WriteIndented = false });
-
-            // Generate SHA256 hash of jsonOptionsData
-            byte[] hashBytes;
-            using (SHA256 sha256 = SHA256.Create())
-            {
-                hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(jsonOptionsData));
-            }
-            string base64Hash = Convert.ToBase64String(hashBytes);
-
-            // Create a short ID from the hash
-            string shortId = base64Hash.Substring(0, 8);
-            return shortId;
         }
 
         static string DataDirectory()
@@ -139,22 +106,12 @@ namespace AgentBenchmark
 
         static void SaveBenchmark(Dictionary<string, Dictionary<string, int>> testResults)
         {
-            string filePath = $"{DataDirectory()}/agentbenchmark.json";
-            bool fileExists = File.Exists(filePath);
-
-            Dictionary<string, Dictionary<string, int>>? fileData = null;
-
-            if (fileExists)
-            {
-                var fileJson = File.ReadAllText(filePath);
-                fileData = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, int>>>(fileJson);
-            }
-
-            fileData ??= new Dictionary<string, Dictionary<string, int>>();
+            Dictionary<string, Dictionary<string, int>> fileData = ReadBenchmarkData();
 
             // Merge the existing data with the new data
             foreach (var item in testResults)
             {
+                var roundCount = 0;
                 if (fileData.TryGetValue(item.Key, out Dictionary<string, int>? existingItem))
                 {
                     foreach (var result in item.Value)
@@ -168,13 +125,34 @@ namespace AgentBenchmark
                             existingItem[result.Key] = result.Value;
                         }
                     }
+
+                    foreach (var result in existingItem)
+                    {
+                        if (result.Key == "roundCount")
+                        {
+                            continue; // Skip roundCount key
+                        }
+                        roundCount += result.Value;
+                    }
+                    existingItem["roundCount"] = roundCount;
                 }
                 else
                 {
                     fileData[item.Key] = item.Value;
+
+                    foreach (var result in item.Value)
+                    {
+                        if (result.Key == "roundCount")
+                        {
+                            continue; // Skip roundCount key
+                        }
+                        roundCount += result.Value;
+                    }
+                    fileData[item.Key]["roundCount"] = roundCount;
                 }
             }
 
+            string filePath = $"{DataDirectory()}/agentbenchmark.json";
             using (StreamWriter writer = new StreamWriter(filePath, append: false))
             {
                 string jsonData = JsonSerializer.Serialize(fileData, options: new JsonSerializerOptions { WriteIndented = true });
@@ -183,6 +161,23 @@ namespace AgentBenchmark
 
             SaveBenchmarkCsv(fileData);
             SaveBenchmarkScoreCsv(fileData);
+        }
+
+        private static Dictionary<string, Dictionary<string, int>> ReadBenchmarkData()
+        {
+            string filePath = $"{DataDirectory()}/agentbenchmark.json";
+            bool fileExists = File.Exists(filePath);
+
+            Dictionary<string, Dictionary<string, int>>? fileData = null;
+            if (fileExists)
+            {
+                var fileJson = File.ReadAllText(filePath);
+                fileData = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, int>>>(fileJson);
+            }
+
+            fileData ??= [];
+
+            return fileData;
         }
 
         static void SaveBenchmarkCsv(Dictionary<string, Dictionary<string, int>> testResults)
@@ -312,6 +307,7 @@ namespace AgentBenchmark
             string rounds = File.ReadAllText("config\\rounds.txt").Trim();
             string[] dataMode = ReadConfigFile("config\\datamode.txt");
             string[] skipBenchmarks = ReadConfigFile("config\\skip-benchmarks.txt");
+            Dictionary<string, Dictionary<string, int>> resumeBenchmarkData = ReadBenchmarkData(); // only used for resume benchmark logic
 
             RequestOptions? cfgOptions = JsonSerializer.Deserialize<RequestOptions>(File.ReadAllText(optionsCfg));
             if (cfgOptions == null)
@@ -362,14 +358,14 @@ namespace AgentBenchmark
 
             Stopwatch allStopWatch = new Stopwatch();
             allStopWatch.Start();
-            for (int t = 1; t <= maxRoundCount; t++)
+            for (int currentRound = 1; currentRound <= maxRoundCount; currentRound++)
             {
                 Stopwatch roundStopWatch = new Stopwatch();
                 roundStopWatch.Start();
-                Console.WriteLine($"Round {t}");
+                Console.WriteLine($"Round {currentRound}");
                 if (!setIterator.MoveNext())
                 {
-                    Console.WriteLine("End of data");
+                    Console.WriteLine("! End of data");
                     break;
                 }
 
@@ -431,7 +427,7 @@ namespace AgentBenchmark
                     // Tally
                     if (games.Contains("tally"))
                     {
-                        await foreach (var reportResult in ChocolateTeamTallyBenchmark.All_Benchmarks(secretValues, model, httpClient, requestOptions, skipBenchmarks))
+                        await foreach (var reportResult in ChocolateTeamTallyBenchmark.All_Benchmarks(secretValues, model, httpClient, requestOptions, skipBenchmarks, currentRound, resumeBenchmarkData))
                         {
                             UpdateBenchmarkData(reportResult, model, requestOptions);
                         }
@@ -440,7 +436,7 @@ namespace AgentBenchmark
                     // Report
                     if (games.Contains("report"))
                     {
-                        await foreach (var reportResult in ChocolateTeamReportBenchmark.All_Benchmarks(secretValues, model, httpClient, requestOptions, skipBenchmarks))
+                        await foreach (var reportResult in ChocolateTeamReportBenchmark.All_Benchmarks(secretValues, model, httpClient, requestOptions, skipBenchmarks, currentRound, resumeBenchmarkData))
                         {
                             UpdateBenchmarkData(reportResult, model, requestOptions);
                         }
@@ -449,7 +445,7 @@ namespace AgentBenchmark
                     // Odd/Even
                     if (games.Contains("oddeven"))
                     {
-                        await foreach (var reportResult in ChocolateTeamOddEvenBenchmark.All_Benchmarks(secretValues, model, httpClient, requestOptions, skipBenchmarks))
+                        await foreach (var reportResult in ChocolateTeamOddEvenBenchmark.All_Benchmarks(secretValues, model, httpClient, requestOptions, skipBenchmarks, currentRound, resumeBenchmarkData))
                         {
                             UpdateBenchmarkData(reportResult, model, requestOptions);
                         }
@@ -465,7 +461,7 @@ namespace AgentBenchmark
                 roundStopWatch.Stop();
                 TimeSpan roundElapsedTime = roundStopWatch.Elapsed;
                 string roundElapsed = $"{roundElapsedTime.Hours:00}:{roundElapsedTime.Minutes:00}:{roundElapsedTime.Seconds:00}.{roundElapsedTime.Milliseconds / 10:00}";
-                Console.WriteLine($"Round {t} done.  Execution time: {roundElapsed}");
+                Console.WriteLine($"Round {currentRound} done.  Execution time: {roundElapsed}");
                 Console.WriteLine("");
             }
 

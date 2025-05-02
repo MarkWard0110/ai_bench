@@ -88,6 +88,7 @@ public class OllamaBenchmark
                     {
                         Temperature = 0.0f,
                         TopP = 0.0f,
+                        NumPredict = 1024
                     },
                     Stream = false
                 };
