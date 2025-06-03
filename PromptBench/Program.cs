@@ -18,12 +18,12 @@ var modelIgnoreList = new string[]{
 models = models.Where(x => !modelIgnoreList.Contains(x)).ToArray();
 
 var prompts = new List<string> {
-    "How to make a sandwich",
-    "How to make a sandwich with a twist",
-    "What are the benefits of exercise?",
-    "Translate the following English text to French: 'The quick brown fox jumps over the lazy dog.'",
-    "Generate a summary of the book 'To Kill a Mockingbird' by Harper Lee.",
-    "Given a list of numbers [1, 2, 3, 4, 5], calculate the average.",
+    //"How to make a sandwich",
+    //"How to make a sandwich with a twist",
+    //"What are the benefits of exercise?",
+    //"Translate the following English text to French: 'The quick brown fox jumps over the lazy dog.'",
+    //"Generate a summary of the book 'To Kill a Mockingbird' by Harper Lee.",
+    //"Given a list of numbers [1, 2, 3, 4, 5], calculate the average.",
     // "Create a function that sorts an array of strings in alphabetical order.",
     // "Find the shortest path between two nodes in a graph using Dijkstra's algorithm.",
     // "Design a database schema for an online shopping system.",

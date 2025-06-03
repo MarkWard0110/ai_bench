@@ -1,3 +1,3 @@
 ﻿//sequence
-//random
-randomset
+random
+//randomset
