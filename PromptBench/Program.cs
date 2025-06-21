@@ -1,5 +1,6 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Invocation;
+using BAIsic.LlmApi.Ollama;
 
 var rootCommand = new RootCommand("Ollama Model Benchmark Tool");
 var samplesOption = new Option<int>(
@@ -9,7 +10,13 @@ var samplesOption = new Option<int>(
 );
 rootCommand.AddOption(samplesOption);
 
-rootCommand.SetHandler(async (int sampleCount) =>
+var contextConfigOption = new Option<string?>(
+    aliases: new[] { "--context-config", "-c" },
+    description: "CSV file mapping model_name to max_context_size."
+);
+rootCommand.AddOption(contextConfigOption);
+
+rootCommand.SetHandler(async (int sampleCount, string? contextConfigFile) =>
 {
     Console.WriteLine($"ai_bench! Running with sampleCount={sampleCount}");
     var ollamaBenchmark = new OllamaBenchmark("http://quorra.homelan.binaryward.com:11434");
@@ -27,6 +34,31 @@ rootCommand.SetHandler(async (int sampleCount) =>
     };
 
     models = models.Where(x => !modelIgnoreList.Contains(x)).ToArray();
+
+    // Parse context config file if provided
+    Dictionary<string, int> modelContextSizes = new();
+    bool filterModelsByContextFile = false;
+    if (!string.IsNullOrEmpty(contextConfigFile) && File.Exists(contextConfigFile))
+    {
+        filterModelsByContextFile = true;
+        using var reader = new StreamReader(contextConfigFile);
+        using var csv = new CsvHelper.CsvReader(reader, System.Globalization.CultureInfo.InvariantCulture);
+        csv.Read(); // header
+        csv.ReadHeader();
+        while (csv.Read())
+        {
+            var model = csv.GetField("model_name");
+            var ctxStr = csv.GetField("max_context_size");
+            if (!string.IsNullOrEmpty(model) && int.TryParse(ctxStr, out var ctx))
+                modelContextSizes[model] = ctx;
+        }
+    }
+
+    if (filterModelsByContextFile)
+    {
+        // Only keep models that are present in the context config file
+        models = models.Where(x => modelContextSizes.ContainsKey(x)).ToArray();
+    }
 
     var prompts = new List<string> {
         //"How to make a sandwich",
@@ -92,12 +124,13 @@ rootCommand.SetHandler(async (int sampleCount) =>
     var random = new Random();
     models = models.OrderBy(x => random.Next()).ToArray();
 
-    var results = await ollamaBenchmark.RunAsync(models, prompts, sampleCount);
+    // Pass context mapping to benchmark
+    var results = await ollamaBenchmark.RunAsync(models, prompts, sampleCount, modelContextSizes);
 
     // Save final report to CSV by reading all samples from duration-results.csv
     string reportFile = "benchmark_report.csv";
     string durationFile = "duration-results.csv";
-    var allSamples = new Dictionary<string, Dictionary<string, List<(double ms, double tps)>>>();
+    var allSamples = new Dictionary<(string model, string ctx), Dictionary<string, List<(double ms, double tps)>>>();
     if (File.Exists(durationFile))
     {
         using (var reader = new StreamReader(durationFile))
@@ -108,6 +141,7 @@ rootCommand.SetHandler(async (int sampleCount) =>
             while (csv.Read())
             {
                 var model = csv.GetField("Model") ?? string.Empty;
+                var ctxSize = csv.GetField("ContextSize") ?? string.Empty;
                 var prompt = csv.GetField("Prompt") ?? string.Empty;
                 var durationStr = csv.GetField("Duration");
                 var tpsStr = csv.GetField("TokensPerSecond");
@@ -117,28 +151,30 @@ rootCommand.SetHandler(async (int sampleCount) =>
                     continue;
                 if (!double.TryParse(tpsStr, out var tps))
                     tps = double.NaN;
-                if (!allSamples.ContainsKey(model))
-                    allSamples[model] = new Dictionary<string, List<(double, double)>>();
-                if (!allSamples[model].ContainsKey(prompt))
-                    allSamples[model][prompt] = new List<(double, double)>();
-                allSamples[model][prompt].Add((duration.TotalMilliseconds, tps));
+                var key = (model, ctxSize);
+                if (!allSamples.ContainsKey(key))
+                    allSamples[key] = new Dictionary<string, List<(double, double)>>();
+                if (!allSamples[key].ContainsKey(prompt))
+                    allSamples[key][prompt] = new List<(double, double)>();
+                allSamples[key][prompt].Add((duration.TotalMilliseconds, tps));
             }
         }
     }
     using (var writer = new StreamWriter(reportFile, append: false))
     {
-        // Change column order: tokens columns first, then time columns, prompt at end
-        writer.WriteLine("Model,SampleCount,MinTokensPerSec,MaxTokensPerSec,MeanTokensPerSec,MedianTokensPerSec,StdDevTokensPerSec,MinMs,MaxMs,MeanMs,MedianMs,StdDevMs,Prompt");
-        foreach (var model in allSamples.Keys.OrderBy(x => x))
+        writer.WriteLine("Model,ContextSize,SampleCount,MinTokensPerSec,MaxTokensPerSec,MeanTokensPerSec,MedianTokensPerSec,StdDevTokensPerSec,MinMs,MaxMs,MeanMs,MedianMs,StdDevMs,Prompt");
+        foreach (var key in allSamples.Keys.OrderBy(x => x.model).ThenBy(x => x.ctx))
         {
-            foreach (var prompt in allSamples[model].Keys.OrderBy(x => x))
+            var model = key.model;
+            var ctxSize = key.ctx;
+            foreach (var prompt in allSamples[key].Keys.OrderBy(x => x))
             {
-                var samples = allSamples[model][prompt];
+                var samples = allSamples[key][prompt];
                 var msList = samples.Select(x => x.ms).Where(x => !double.IsNaN(x)).ToArray();
                 var tpsList = samples.Select(x => x.tps).Where(x => !double.IsNaN(x)).ToArray();
                 if (msList.Length == 0)
                 {
-                    writer.WriteLine($"{model},0,,,,,,,,,,,,{prompt}");
+                    writer.WriteLine($"{model},{ctxSize},0,,,,,,,,,,,,{prompt}");
                     continue;
                 }
                 var minMs = msList.Min();
@@ -151,12 +187,12 @@ rootCommand.SetHandler(async (int sampleCount) =>
                 var meanTps = tpsList.Length > 0 ? tpsList.Average() : double.NaN;
                 var medianTps = tpsList.Length > 0 ? GetMedian(tpsList) : double.NaN;
                 var stdDevTps = tpsList.Length > 0 ? Math.Sqrt(tpsList.Select(x => Math.Pow(x - meanTps, 2)).Average()) : double.NaN;
-                writer.WriteLine($"{model},{msList.Length},{minTps},{maxTps},{meanTps},{medianTps},{stdDevTps},{minMs},{maxMs},{meanMs},{medianMs},{stdDevMs},{prompt}");
+                writer.WriteLine($"{model},{ctxSize},{msList.Length},{minTps},{maxTps},{meanTps},{medianTps},{stdDevTps},{minMs},{maxMs},{meanMs},{medianMs},{stdDevMs},{prompt}");
             }
         }
     }
     Console.WriteLine($"Report saved to {reportFile}");
-}, samplesOption);
+}, samplesOption, contextConfigOption);
 
 return await rootCommand.InvokeAsync(args);
 

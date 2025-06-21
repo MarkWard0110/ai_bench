@@ -35,19 +35,35 @@ public class OllamaBenchmark
             using (var reader = new StreamReader(DurationResultsFile))
             using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
             {
-                var records = csv.GetRecords<dynamic>();
-                foreach (var record in records)
+                csv.Read();
+                csv.ReadHeader();
+                while (csv.Read())
                 {
-                    var model = record.Model;
-                    var prompt = SanatiseValue(record.Prompt);
-                    var sampleIndex = record.SampleIndex;
-                    _runHistory.Add($"{model}-{prompt}-{sampleIndex}");
+                    var model = csv.GetField("Model") ?? string.Empty;
+                    var ctx = csv.GetField("ContextSize") ?? string.Empty;
+                    var prompt = SanatiseValue(csv.GetField("Prompt") ?? string.Empty);
+                    var sampleIndex = csv.GetField("SampleIndex") ?? string.Empty;
+                    // Use the same key format as in RunAsync
+                    var modelKey = string.IsNullOrEmpty(ctx) ? model : $"{model}-ctx{ctx}";
+                    _runHistory.Add($"{modelKey}-{prompt}-{sampleIndex}");
                 }
             }
         }
     }
 
-    public async Task<Dictionary<string, Dictionary<string, List<TimeSpan>>>> RunAsync(IEnumerable<string> models, List<string> prompts, int sampleCount)
+    public async Task<Dictionary<string, Dictionary<string, List<TimeSpan>>>> RunAsync(
+        IEnumerable<string> models,
+        List<string> prompts,
+        int sampleCount)
+    {
+        return await RunAsync(models, prompts, sampleCount, new Dictionary<string, int>());
+    }
+
+    public async Task<Dictionary<string, Dictionary<string, List<TimeSpan>>>> RunAsync(
+        IEnumerable<string> models,
+        List<string> prompts,
+        int sampleCount,
+        Dictionary<string, int> modelContextSizes)
     {
         var results = new Dictionary<string, Dictionary<string, List<TimeSpan>>>();
         var modelCount = models.Count();
@@ -60,25 +76,29 @@ public class OllamaBenchmark
         foreach (var model in models)
         {
             modelIndex++;
-            if (!results.ContainsKey(model))
-                results[model] = new Dictionary<string, List<TimeSpan>>();
+            int contextSize = 2048;
+            if (modelContextSizes != null && modelContextSizes.TryGetValue(model, out var ctx))
+                contextSize = ctx;
+            string modelKey = $"{model}-ctx{contextSize}";
+            if (!results.ContainsKey(modelKey))
+                results[modelKey] = new Dictionary<string, List<TimeSpan>>();
             int promptIndex = 0;
             foreach (var prompt in prompts)
             {
                 promptIndex++;
                 var sanitizedPrompt = SanatiseValue(prompt);
-                if (!results[model].ContainsKey(prompt))
-                    results[model][prompt] = new List<TimeSpan>();
+                if (!results[modelKey].ContainsKey(prompt))
+                    results[modelKey][prompt] = new List<TimeSpan>();
                 for (int sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
                 {
-                    string runKey = $"{model}-{sanitizedPrompt}-{sampleIndex}";
+                    string runKey = $"{modelKey}-{sanitizedPrompt}-{sampleIndex}";
                     completed++;
                     double percentage = (double)completed / total * 100;
-                    Console.WriteLine($"Running {percentage:F2}%: model {modelIndex} of {modelCount}: {DateTime.Now} {model}, prompt {promptIndex} of {promptCount}: {prompt}, sample {sampleIndex + 1} of {sampleCount}");
+                    Console.WriteLine($"Running {percentage:F2}%: model {modelIndex} of {modelCount}: {DateTime.Now} {modelKey}, prompt {promptIndex} of {promptCount}: {prompt}, sample {sampleIndex + 1} of {sampleCount}");
 
                     if (_runHistory.Contains(runKey))
                     {
-                        Console.WriteLine($"Skipping model {model}, prompt {prompt}, sample {sampleIndex} as it has already been run.");
+                        Console.WriteLine($"Skipping model {modelKey}, prompt {prompt}, sample {sampleIndex} as it has already been run.");
                         continue;
                     }
 
@@ -95,7 +115,8 @@ public class OllamaBenchmark
                         {
                             Temperature = 0.0f,
                             TopP = 0.0f,
-                            NumPredict = 1024
+                            NumPredict = 1024,
+                            NumCtx = contextSize
                         },
                         Stream = false
                     };
@@ -121,13 +142,13 @@ public class OllamaBenchmark
                     }
                     if (cts.Token.IsCancellationRequested)
                     {
-                        Console.WriteLine($"Model {model} timed out for prompt {prompt}");
+                        Console.WriteLine($"Model {modelKey} timed out for prompt {prompt}");
                     }
                     stopwatch.Stop();
                     var elapsed = !cts.Token.IsCancellationRequested ? stopwatch.Elapsed : TimeSpan.MinValue;
-                    results[model][prompt].Add(elapsed);
+                    results[modelKey][prompt].Add(elapsed);
                     var tokensPerSecond = modelResponse.EvalCount < 0 ? -1 : modelResponse.EvalCount / (modelResponse.EvalDuration / 1e9);
-                    SaveRecord(model, prompt, elapsed, modelResponse.Message!.Content, tokensPerSecond!.Value, sampleIndex);
+                    SaveRecord(modelKey, prompt, elapsed, modelResponse.Message!.Content, tokensPerSecond!.Value, sampleIndex);
                 }
             }
         }
@@ -136,14 +157,27 @@ public class OllamaBenchmark
 
     private void SaveRecord(string model, string prompt, TimeSpan duration, string response, double tokensPerSecond, int sampleIndex)
     {
-        Console.WriteLine($"{model}, duration: {duration}, tps: {tokensPerSecond}, sample: {sampleIndex}, {prompt}");
+        // Split model and context size
+        string modelName = model;
+        string contextSize = "";
+        var ctxIdx = model.LastIndexOf("-ctx");
+        if (ctxIdx > 0)
+        {
+            modelName = model.Substring(0, ctxIdx);
+            contextSize = model.Substring(ctxIdx + 4); // skip '-ctx'
+        }
+        // Remove any leading 'x' or whitespace from contextSize
+        if (!string.IsNullOrEmpty(contextSize) && (contextSize.StartsWith("x") || contextSize.StartsWith("X")))
+            contextSize = contextSize.Substring(1);
+        contextSize = contextSize.Trim();
+        Console.WriteLine($"{modelName}, ctx: {contextSize}, duration: {duration}, tps: {tokensPerSecond}, sample: {sampleIndex}, {prompt}");
         var prompt_value = SanatiseValue(prompt);
         var response_value = SanatiseValue(response);
-        SaveDurationResults(model, prompt_value, duration, tokensPerSecond, sampleIndex);
-        SaveInvokeLog(model, prompt_value, response_value, duration, tokensPerSecond, sampleIndex);
+        SaveDurationResults(modelName, contextSize, prompt_value, duration, tokensPerSecond, sampleIndex);
+        SaveInvokeLog(modelName, contextSize, prompt_value, response_value, duration, tokensPerSecond, sampleIndex);
     }
 
-    private void SaveDurationResults(string model, string prompt, TimeSpan duration, double tokensPerSecond, int sampleIndex)
+    private void SaveDurationResults(string model, string contextSize, string prompt, TimeSpan duration, double tokensPerSecond, int sampleIndex)
     {
         string filePath = DurationResultsFile;
         bool fileExists = File.Exists(filePath);
@@ -151,9 +185,9 @@ public class OllamaBenchmark
         {
             if (!fileExists)
             {
-                writer.WriteLine("\"Model\",\"Duration\",\"TokensPerSecond\",\"Prompt\",\"SampleIndex\"");
+                writer.WriteLine("Model,ContextSize,Duration,TokensPerSecond,Prompt,SampleIndex");
             }
-            writer.WriteLine($"\"{model}\",\"{duration}\",\"{tokensPerSecond}\",\"{prompt}\",\"{sampleIndex}\"");
+            writer.WriteLine($"{model},{contextSize},{duration},{tokensPerSecond},{prompt},{sampleIndex}");
         }
     }
 
@@ -166,7 +200,7 @@ public class OllamaBenchmark
         return value;
     }
 
-    private void SaveInvokeLog(string model, string prompt, string response, TimeSpan duration, double tokensPerSecond, int sampleIndex)
+    private void SaveInvokeLog(string model, string contextSize, string prompt, string response, TimeSpan duration, double tokensPerSecond, int sampleIndex)
     {
         string filePath = InvokeLogFile;
         bool fileExists = File.Exists(filePath);
@@ -174,9 +208,9 @@ public class OllamaBenchmark
         {
             if (!fileExists)
             {
-                writer.WriteLine("\"Model\",\"Duration\",\"TokensPerSecond\",\"Prompt\",\"Response\",\"SampleIndex\"");
+                writer.WriteLine("Model,ContextSize,Duration,TokensPerSecond,Prompt,Response,SampleIndex");
             }
-            writer.WriteLine($"\"{model}\",\"{duration}\",\"{tokensPerSecond}\",\"{prompt}\",\"{response}\",\"{sampleIndex}\"");
+            writer.WriteLine($"{model},{contextSize},{duration},{tokensPerSecond},{prompt},{response},{sampleIndex}");
         }
     }
 }
