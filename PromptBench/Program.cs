@@ -1,6 +1,8 @@
 ﻿using System.CommandLine;
-using System.CommandLine.Invocation;
 using BAIsic.LlmApi.Ollama;
+
+const string CurrentBenchmarkDirectory = "_current";
+const string BenchmarkArchiveDirectory = "benchmarks";
 
 var rootCommand = new RootCommand("Ollama Model Benchmark Tool");
 var samplesOption = new Option<int>(
@@ -29,11 +31,38 @@ var cpuOnlyOption = new Option<bool>(
 );
 rootCommand.AddOption(cpuOnlyOption);
 
+var newOverrideOption = new Option<bool>(
+    aliases: new[] { "--override" },
+    description: "Delete _current benchmark data without prompting."
+);
+
+var newCommand = new Command("new", "Reset _current benchmark data.");
+newCommand.AddOption(newOverrideOption);
+newCommand.SetHandler((bool isOverride) =>
+{
+    StartNewBenchmark(isOverride);
+}, newOverrideOption);
+rootCommand.AddCommand(newCommand);
+
+var archiveLabelOption = new Option<string?>(
+    aliases: new[] { "--label", "-l" },
+    description: "Optional label appended to archive folder name."
+);
+
+var archiveCommand = new Command("archive", "Archive _current benchmark data to benchmarks/<timestamp>[-label].");
+archiveCommand.AddOption(archiveLabelOption);
+archiveCommand.SetHandler((string? label) =>
+{
+    ArchiveCurrentBenchmarkData(label);
+}, archiveLabelOption);
+rootCommand.AddCommand(archiveCommand);
+
 
 rootCommand.SetHandler(async (int sampleCount, string? contextConfigFile, string ollamaHost, bool cpuOnly) =>
 {
     Console.WriteLine($"ai_bench! Running with sampleCount={sampleCount}, ollamaHost={ollamaHost}, cpuOnly={cpuOnly}");
-    var ollamaBenchmark = new OllamaBenchmark(ollamaHost);
+    var dataDirectory = DataDirectory();
+    var ollamaBenchmark = new OllamaBenchmark(ollamaHost, dataDirectory);
     var models = await ollamaBenchmark.GetModels();
 
     var modelIgnoreList = new string[]{
@@ -86,8 +115,8 @@ rootCommand.SetHandler(async (int sampleCount, string? contextConfigFile, string
     var results = await ollamaBenchmark.RunAsync(models, prompts, sampleCount, modelContextSizes, cpuOnly);
 
     // Save final report to CSV by reading all samples from duration-results.csv
-    string reportFile = "benchmark_report.csv";
-    string durationFile = "duration-results.csv";
+    string reportFile = Path.Combine(dataDirectory, "benchmark_report.csv");
+    string durationFile = Path.Combine(dataDirectory, "duration-results.csv");
     var allSamples = new Dictionary<(string model, string ctx), Dictionary<string, List<(double ms, double tps)>>>();
     if (File.Exists(durationFile))
     {
@@ -161,4 +190,94 @@ double GetMedian(double[] values)
     int n = values.Length;
     double median = (n % 2 == 0) ? (values[n / 2 - 1] + values[n / 2]) / 2 : values[n / 2];
     return median;
+}
+
+string DataDirectory()
+{
+    if (!Directory.Exists(CurrentBenchmarkDirectory))
+    {
+        Directory.CreateDirectory(CurrentBenchmarkDirectory);
+    }
+
+    return CurrentBenchmarkDirectory;
+}
+
+void StartNewBenchmark(bool isOverride)
+{
+    var currentDirectory = DataDirectory();
+    if (!HasBenchmarkData(currentDirectory))
+    {
+        Console.WriteLine("No _current benchmark data found.");
+        return;
+    }
+
+    if (!isOverride)
+    {
+        Console.Write("Found _current benchmark data. Delete it? (yes/no): ");
+        var input = Console.ReadLine()?.Trim();
+        var confirmed = string.Equals(input, "yes", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(input, "y", StringComparison.OrdinalIgnoreCase);
+        if (!confirmed)
+        {
+            Console.WriteLine("Keeping _current benchmark data.");
+            return;
+        }
+    }
+
+    Directory.Delete(currentDirectory, recursive: true);
+    Directory.CreateDirectory(currentDirectory);
+    Console.WriteLine("_current benchmark data reset.");
+}
+
+void ArchiveCurrentBenchmarkData(string? label)
+{
+    var currentDirectory = DataDirectory();
+    if (!HasBenchmarkData(currentDirectory))
+    {
+        Console.WriteLine("No _current benchmark data found to archive.");
+        return;
+    }
+
+    Directory.CreateDirectory(BenchmarkArchiveDirectory);
+
+    var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+    var normalizedLabel = NormalizeArchiveLabel(label);
+    var folderName = string.IsNullOrWhiteSpace(normalizedLabel)
+        ? timestamp
+        : $"{timestamp}-{normalizedLabel}";
+
+    var destinationDirectory = Path.Combine(BenchmarkArchiveDirectory, folderName);
+    var dedupeSuffix = 1;
+    while (Directory.Exists(destinationDirectory))
+    {
+        destinationDirectory = Path.Combine(BenchmarkArchiveDirectory, $"{folderName}-{dedupeSuffix}");
+        dedupeSuffix++;
+    }
+
+    Directory.Move(currentDirectory, destinationDirectory);
+    Directory.CreateDirectory(currentDirectory);
+
+    Console.WriteLine($"Archived _current benchmark data to {destinationDirectory}");
+}
+
+bool HasBenchmarkData(string directoryPath)
+{
+    return Directory.Exists(directoryPath) && Directory.EnumerateFileSystemEntries(directoryPath).Any();
+}
+
+string NormalizeArchiveLabel(string? label)
+{
+    if (string.IsNullOrWhiteSpace(label))
+    {
+        return string.Empty;
+    }
+
+    var invalidChars = Path.GetInvalidFileNameChars();
+    var normalized = new string(label
+        .Trim()
+        .Select(c => invalidChars.Contains(c) ? '_' : c)
+        .ToArray())
+        .Replace(' ', '-');
+
+    return normalized;
 }

@@ -10,10 +10,14 @@ public class OllamaBenchmark
     private OllamaClient _ollama;
     private HashSet<string> _runHistory = new HashSet<string>();
     private const int TimeoutMinutes = 30;
-    private const string DurationResultsFile = "duration-results.csv";
-    private const string InvokeLogFile = "invoke_log.csv";
-    public OllamaBenchmark(string ollamaApiUrl)
+    private readonly string _dataDirectory;
+    private string DurationResultsFile => Path.Combine(_dataDirectory, "duration-results.csv");
+    private string InvokeLogFile => Path.Combine(_dataDirectory, "invoke_log.csv");
+
+    public OllamaBenchmark(string ollamaApiUrl, string dataDirectory)
     {
+        _dataDirectory = dataDirectory;
+        Directory.CreateDirectory(_dataDirectory);
         _ollama = new OllamaClient(new HttpClient()
         {
             BaseAddress = new Uri(ollamaApiUrl),
