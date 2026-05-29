@@ -3,7 +3,7 @@
 // llama3.1:8b-instruct-q3_K_M
 // llama3.1:8b-instruct-q3_K_L
 // llama3.1:8b-instruct-q4_0
-llama3.1:8b-instruct-q4_K_M
+//llama3.1:8b-instruct-q4_K_M
 // llama3.1:8b-instruct-q6_K
 //llama3.1:8b-instruct-q8_0
 // llama3.1:8b-instruct-fp16
@@ -40,3 +40,4 @@ llama3.1:8b-instruct-q4_K_M
 
 // mistral-small:24b-instruct-2501-q4_K_M
 //gemma3:4b-it-fp16
+gemma4:e4b-it-q4_K_M

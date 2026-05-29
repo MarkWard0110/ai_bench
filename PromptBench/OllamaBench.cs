@@ -54,16 +54,18 @@ public class OllamaBenchmark
     public async Task<Dictionary<string, Dictionary<string, List<TimeSpan>>>> RunAsync(
         IEnumerable<string> models,
         List<string> prompts,
-        int sampleCount)
+        int sampleCount,
+        bool cpuOnly)
     {
-        return await RunAsync(models, prompts, sampleCount, new Dictionary<string, int>());
+        return await RunAsync(models, prompts, sampleCount, new Dictionary<string, int>(), cpuOnly);
     }
 
     public async Task<Dictionary<string, Dictionary<string, List<TimeSpan>>>> RunAsync(
         IEnumerable<string> models,
         List<string> prompts,
         int sampleCount,
-        Dictionary<string, int> modelContextSizes)
+        Dictionary<string, int> modelContextSizes,
+        bool cpuOnly)
     {
         var results = new Dictionary<string, Dictionary<string, List<TimeSpan>>>();
         var modelCount = models.Count();
@@ -116,7 +118,8 @@ public class OllamaBenchmark
                             Temperature = 0.0f,
                             TopP = 0.0f,
                             NumPredict = 1024,
-                            NumCtx = contextSize
+                            NumCtx = contextSize,
+                            NumGpu = cpuOnly ? 0 : (int?)null
                         },
                         Stream = false
                     };
