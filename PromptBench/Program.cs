@@ -3,6 +3,7 @@ using BAIsic.LlmApi.Ollama;
 
 const string CurrentBenchmarkDirectory = "_current";
 const string BenchmarkArchiveDirectory = "benchmarks";
+const string ModelIgnoreListFileName = "model-ignore-list.txt";
 
 var rootCommand = new RootCommand("Ollama Model Benchmark Tool");
 var samplesOption = new Option<int>(
@@ -65,16 +66,7 @@ rootCommand.SetHandler(async (int sampleCount, string? contextConfigFile, string
     var ollamaBenchmark = new OllamaBenchmark(ollamaHost, dataDirectory);
     var models = await ollamaBenchmark.GetModels();
 
-    var modelIgnoreList = new string[]{
-        "nomic-embed-text:137m-v1.5-fp16", // does not support chat - embedding model
-        "mxbai-embed-large:335m-v1-fp16", // embedding model
-        "snowflake-arctic-embed:335m-l-fp16",
-        "zw66/llama3-chat-8.0bpw:latest",   
-        "unclemusclez/jina-embeddings-v2-base-code:f16",
-        "jina/jina-embeddings-v2-base-en:latest",
-        "bge-large:335m-en-v1.5-fp16",
-        "all-minilm:33m-l12-v2-fp16",
-    };
+    var modelIgnoreList = LoadModelIgnoreList();
 
     models = models.Where(x => !modelIgnoreList.Contains(x)).ToArray();
 
@@ -280,4 +272,20 @@ string NormalizeArchiveLabel(string? label)
         .Replace(' ', '-');
 
     return normalized;
+}
+
+HashSet<string> LoadModelIgnoreList()
+{
+    var modelIgnoreListPath = Path.Combine(AppContext.BaseDirectory, ModelIgnoreListFileName);
+    if (!File.Exists(modelIgnoreListPath))
+    {
+        return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    }
+
+    return File
+        .ReadLines(modelIgnoreListPath)
+        .Select(line => line.Trim())
+        .Where(line => !string.IsNullOrWhiteSpace(line))
+        .Where(line => !line.StartsWith('#'))
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
 }
